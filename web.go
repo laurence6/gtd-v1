@@ -48,14 +48,12 @@ func web() {
 func index(w http.ResponseWriter, r *http.Request) {
 	taskList := []*gtd.Task{}
 	for _, v := range tp {
+		//if v.ParentTask == nil {
 		taskList = append(taskList, v)
+		//}
 	}
 	gtd.SortByDefault(taskList)
-	htmlTaskList := []*htmlTask{}
-	for _, v := range taskList {
-		htmlTaskList = append(htmlTaskList, taskToHTMLTask(v))
-	}
-	err := t.ExecuteTemplate(w, "index", htmlTaskList)
+	err := t.ExecuteTemplate(w, "index", taskList)
 	if err != nil {
 		log.Println(err.Error())
 		oops(w, r, err)
@@ -83,7 +81,7 @@ func edit(w http.ResponseWriter, r *http.Request) {
 	if id != 0 {
 		if task, ok := tp[id]; ok {
 			_ = t.ExecuteTemplate(w, "add", "")
-			err = t.ExecuteTemplate(w, "edit", taskToHTMLTask(task))
+			err = t.ExecuteTemplate(w, "edit", task)
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
@@ -171,63 +169,6 @@ func stoI64(str string) (int64, error) {
 	return i64, nil
 }
 
-type htmlTask struct {
-	gtd.Task
-	NoDue            bool
-	DueDate          string
-	DueTime          string
-	Next             bool
-	NextDate         string
-	NextTime         string
-	NoNotification   bool
-	NotificationDate string
-	NotificationTime string
-}
-
-func taskToHTMLTask(task *gtd.Task) *htmlTask {
-	ht := &htmlTask{}
-	ht.Task = *task
-	if ht.Task.Due != 0 {
-		due := time.Unix(ht.Task.Due, 0)
-		ht.DueDate = due.Format(dateLayout)
-		ht.DueTime = due.Format(timeLayout)
-	} else {
-		ht.NoDue = true
-	}
-	if ht.Task.Next != 0 {
-		ht.Next = true
-		next := time.Unix(ht.Task.Next, 0)
-		ht.NextDate = next.Format(dateLayout)
-		ht.NextTime = next.Format(timeLayout)
-	}
-	if ht.Task.Notification != 0 {
-		notification := time.Unix(ht.Task.Notification, 0)
-		ht.NotificationDate = notification.Format(dateLayout)
-		ht.NotificationTime = notification.Format(timeLayout)
-	} else {
-		ht.NoNotification = true
-	}
-	return ht
-}
-
-// parseDateTimeInLocation parses date & time string into unix timestamp
-func parseDateTimeInLocation(dateStr, timeStr string, loc *time.Location) (int64, error) {
-	var datetime time.Time
-	var err error
-	if dateStr != "" {
-		if timeStr != "" {
-			datetime, err = time.ParseInLocation(dateLayout+timeLayout, dateStr+timeStr, location)
-		} else {
-			datetime, err = time.ParseInLocation(dateLayout, dateStr, location)
-		}
-		if err != nil {
-			return 0, err
-		}
-		return datetime.Unix(), nil
-	}
-	return 0, nil
-}
-
 // updateTaskFromForm updates Subject, Due, Priority, Next, Notification, Note fields
 func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 	var err error
@@ -235,13 +176,12 @@ func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 
 	noDue := form.Get("NoDue")
 	if noDue == "on" {
-		task.Due = 0
+		task.Due.Set(0)
 	} else {
-		datetime, err := parseDateTimeInLocation(form.Get("DueDate"), form.Get("DueTime"), location)
+		err := task.Due.ParseDateTimeInLocation(form.Get("DueDate"), form.Get("DueTime"), location)
 		if err != nil {
 			return err
 		}
-		task.Due = datetime
 	}
 
 	task.Priority, err = strconv.Atoi(form.Get("Priority"))
@@ -251,24 +191,22 @@ func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 
 	next := form.Get("Next")
 	if next == "on" {
-		datetime, err := parseDateTimeInLocation(form.Get("NextDate"), form.Get("NextTime"), location)
+		err := task.Next.ParseDateTimeInLocation(form.Get("NextDate"), form.Get("NextTime"), location)
 		if err != nil {
 			return err
 		}
-		task.Next = datetime
 	} else {
-		task.Next = 0
+		task.Next.Set(0)
 	}
 
 	noNotification := form.Get("NoNotification")
 	if noNotification == "on" {
-		task.Notification = 0
+		task.Notification.Set(0)
 	} else {
-		datetime, err := parseDateTimeInLocation(form.Get("NotificationDate"), form.Get("NotificationTime"), location)
+		err := task.Notification.ParseDateTimeInLocation(form.Get("NotificationDate"), form.Get("NotificationTime"), location)
 		if err != nil {
 			return err
 		}
-		task.Notification = datetime
 	}
 
 	task.Note = form.Get("Note")
