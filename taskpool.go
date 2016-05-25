@@ -19,6 +19,9 @@ func newTask() *Task {
 	task := &Task{}
 	task.ID = id
 	task.Start = start
+	task.Due = &Time{}
+	task.Next = &Time{}
+	task.Notification = &Time{}
 	return task
 }
 

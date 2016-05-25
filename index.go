@@ -15,11 +15,11 @@ func (index index) Swap(i, j int) {
 	index[i], index[j] = index[j], index[i]
 }
 
-func earlier(a, b int64) bool {
-	if a == 0 || b == 0 {
-		return a > b
+func earlier(a, b *Time) bool {
+	if a.sec == 0 || b.sec == 0 {
+		return a.sec > b.sec
 	}
-	return a < b
+	return a.sec < b.sec
 }
 
 type byDue struct {
@@ -63,9 +63,9 @@ func SortByDefault(taskList []*Task) {
 	now := time.Now().Unix()
 	for _, i := range taskList {
 		switch {
-		case i.Due-now < 0:
+		case i.Due.sec-now < 0:
 			fallthrough
-		case i.Due-now < int64(7*24*time.Hour/1e9):
+		case i.Due.sec-now < int64(7*24*time.Hour/1e9):
 			lists[0] = append(lists[0], i)
 		case i.Priority == 1:
 			lists[1] = append(lists[1], i)

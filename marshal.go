@@ -3,6 +3,7 @@ package gtd
 import (
 	"encoding/json"
 	"io"
+	"strconv"
 )
 
 type marshalTask struct {
@@ -54,8 +55,8 @@ func (tp TaskPool) Marshal(w io.Writer) error {
 	return nil
 }
 
-// Unmarshal reads json objects from Reader and deserializes them to a TaskPool
-func Unmarshal(r io.Reader) (TaskPool, error) {
+// UnmarshalTaskPool reads json objects from Reader and deserializes them to a TaskPool
+func UnmarshalTaskPool(r io.Reader) (TaskPool, error) {
 	tp := TaskPool{}
 	decoder := json.NewDecoder(r)
 	for {
@@ -73,4 +74,19 @@ func Unmarshal(r io.Reader) (TaskPool, error) {
 		tp[task.ID] = &task
 	}
 	return tp, nil
+}
+
+// MarshalJSON marshals time to json
+func (t *Time) MarshalJSON() ([]byte, error) {
+	return []byte(strconv.FormatInt(t.sec, 10)), nil
+}
+
+// UnmarshalJSON unmarshals json to time
+func (t *Time) UnmarshalJSON(b []byte) error {
+	sec, err := strconv.ParseInt(string(b), 10, 64)
+	if err != nil {
+		return err
+	}
+	t.Set(sec)
+	return nil
 }

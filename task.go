@@ -6,10 +6,10 @@ type Task struct {
 	Start int64
 
 	Subject      string
-	Due          int64
+	Due          *Time
 	Priority     int
-	Next         int64
-	Notification int64
+	Next         *Time
+	Notification *Time
 	Note         string
 
 	ParentTask *Task
