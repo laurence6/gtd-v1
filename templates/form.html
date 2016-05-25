@@ -1,0 +1,93 @@
+{{define "form"}}
+<form action="update" method="post" class="col-sm-8 col-sm-offset-2">
+  <div class="form-group">
+    <label>ID</label>
+    <input type="text" name="ID" class="form-control" readonly>
+  </div>
+
+  <div class="form-group">
+    <label>Subject</label>
+    <input type="text" name="Subject" class="form-control" autofocus>
+  </div>
+
+  <div class="form-group">
+    <label>Due</label>
+    <div class="row">
+      <div class="col-xs-12 checkbox">
+        <label>
+          <input type="checkbox" name="NoDue">No due</input>
+        </label>
+      </div>
+      <div class="col-xs-7">
+        <input type="date" name="DueDate" class="form-control">
+      </div>
+      <div class="col-xs-5">
+        <input type="time" name="DueTime" class="form-control">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Priority</label>
+    <br>
+    <div class="btn-group" data-toggle="buttons">
+      <label class="btn btn-default">
+        <input type="radio" name="Priority" value="1">1
+      </label>
+      <label class="btn btn-default">
+        <input type="radio" name="Priority" value="2">2
+      </label>
+      <label class="btn btn-default">
+        <input type="radio" name="Priority" value="3">3
+      </label>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Next</label>
+    <div class="row">
+      <div class="col-xs-12 checkbox">
+        <label>
+          <input type="checkbox" name="Next">Next</input>
+        </label>
+      </div>
+      <div class="col-xs-7">
+        <input type="date" name="NextDate" class="form-control">
+      </div>
+      <div class="col-xs-5">
+        <input type="time" name="NextTime" class="form-control">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Notification</label>
+    <div class="row">
+      <div class="col-xs-12 checkbox">
+        <label>
+          <input type="checkbox" name="NoNotification">No notification</input>
+        </label>
+      </div>
+      <div class="col-xs-7">
+        <input type="date" name="NotificationDate" class="form-control">
+      </div>
+      <div class="col-xs-5">
+        <input type="time" name="NotificationTime" class="form-control">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Note</label>
+    <textarea name="Note" class="form-control" rows="6"></textarea>
+  </div>
+
+  <div class="form-group">
+    <button type="submit" class="btn btn-default form-control">Submit</button>
+  </div>
+
+  <div class="form-group">
+    <a type="botton" href="" id="Delete" class="btn btn-danger form-control hidden">Delete</a>
+  </div>
+</form>
+{{end}}

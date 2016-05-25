@@ -1,0 +1,28 @@
+{{define "index"}}
+{{template "header"}}
+<ul class="col-sm-8 col-sm-offset-2 list-group">
+  {{range .}}
+    <a href="javascript:void(0)" onclick="$(this).next().slideToggle(200);" class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
+      <h4 class="col-xs-12 col-sm-8"><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</h4>
+      <h4 class="col-xs-6 col-sm-4 text-nowrap">{{.Due.Date}} {{.Due.Time}}</h4>
+    </a>
+    <li class="row list-group-item" style="display:none;">
+      <a href="edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
+      <a href="delete?ID={{.ID}}" class="col-xs-6 col-sm-3">Delete</a>
+      {{if .SubTasks}}
+      <ul class="col-xs-12 col-sm-12 list-group">
+        {{range .SubTasks}}
+        <li class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
+            <p class="col-xs-12 col-sm-8"><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</p>
+            <p class="col-xs-6 col-sm-4 text-nowrap">{{.Due.Date}} {{.Due.Time}}</p>
+            <a href="edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
+            <a href="delete?ID={{.ID}}" class="col-xs-6 col-sm-3">Delete</a>
+        </li>
+        {{end}}
+      </ul>
+      {{end}}
+    </li>
+  {{end}}
+</ul>
+{{template "footer"}}
+{{end}}
