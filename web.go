@@ -2,13 +2,14 @@ package main
 
 import (
 	"errors"
-	"github.com/laurence6/gtd.go/core"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"text/template"
 	"time"
+
+	"github.com/laurence6/gtd.go/core"
 )
 
 const (
@@ -36,6 +37,7 @@ func web() {
 	}
 	http.HandleFunc("/", index)
 	http.HandleFunc("/add", add)
+	http.HandleFunc("/addSub", addSub)
 	http.HandleFunc("/edit", edit)
 	http.HandleFunc("/update", updateTask)
 	http.HandleFunc("/delete", deleteTask)
@@ -46,6 +48,10 @@ func web() {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.Redirect(w, r, "", 404)
+		return
+	}
 	taskList := []*gtd.Task{}
 	for _, v := range tp {
 		//if v.ParentTask == nil {
@@ -57,7 +63,6 @@ func index(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err.Error())
 		oops(w, r, err)
-		return
 	}
 }
 
@@ -66,8 +71,31 @@ func add(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err.Error())
 		oops(w, r, err)
+	}
+}
+
+func addSub(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id, err := stoI64(r.Form.Get("ID"))
+	if err != nil {
+		log.Println(err.Error())
+		oops(w, r, err)
 		return
 	}
+	if id != 0 {
+		if task, ok := tp[id]; ok {
+			subTask, err := tp.NewSubTask(task)
+			if err != nil {
+				log.Println(err.Error())
+				oops(w, r, err)
+				tp.Delete(subTask)
+				return
+			}
+			http.Redirect(w, r, "edit?ID="+strconv.FormatInt(subTask.ID, 10), 302)
+			return
+		}
+	}
+	http.Redirect(w, r, "add", 302)
 }
 
 func edit(w http.ResponseWriter, r *http.Request) {
@@ -80,12 +108,18 @@ func edit(w http.ResponseWriter, r *http.Request) {
 	}
 	if id != 0 {
 		if task, ok := tp[id]; ok {
-			_ = t.ExecuteTemplate(w, "add", "")
+			_ = t.ExecuteTemplate(w, "header", "")
+			_ = t.ExecuteTemplate(w, "form", "")
+			err = t.ExecuteTemplate(w, "parentsubtask", task)
+			if err != nil {
+				log.Println(err.Error())
+				oops(w, r, err)
+			}
+			_ = t.ExecuteTemplate(w, "footer", "")
 			err = t.ExecuteTemplate(w, "edit", task)
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
-				return
 			}
 			return
 		}
@@ -123,6 +157,7 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
+				return
 			}
 			http.Redirect(w, r, "", 302)
 			return

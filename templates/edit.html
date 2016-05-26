@@ -3,16 +3,24 @@
 $(document).ready(function() {
     $("input[name='ID']").val("{{.ID}}");
     $("input[name='Subject']").val("{{.Subject}}");
-    $("input[name='NoDue']").prop("checked", {{.NoDue}});
-    $("input[name='DueDate']").val("{{.Task.Due.Date}}");
-    $("input[name='DueTime']").val("{{.Task.Due.Time}}");
+    {{if .Due.EqualZero}}
+    $("input[name='NoDue']").prop("checked", true);
+    {{else}}
+    $("input[name='DueDate']").val("{{.Due.Date}}");
+    $("input[name='DueTime']").val("{{.Due.Time}}");
+    {{end}}
     $("input[name='Priority'][value='{{.Priority}}']").parent().button('toggle');
-    $("input[name='Next']").prop("checked", {{.Next}});
-    $("input[name='NextDate']").val("{{.Task.Next.Date}}");
-    $("input[name='NextTime']").val("{{.Task.Next.Time}}");
-    $("input[name='NoNotification']").prop("checked", {{.NoNotification}});
-    $("input[name='NotificationDate']").val("{{.Task.Notification.Date}}");
-    $("input[name='NotificationTime']").val("{{.Task.Notification.Time}}");
+    {{if not .Next.EqualZero}}
+    $("input[name='Next']").prop("checked", true);
+    $("input[name='NextDate']").val("{{.Next.Date}}");
+    $("input[name='NextTime']").val("{{.Next.Time}}");
+    {{end}}
+    {{if .Notification.EqualZero}}
+    $("input[name='NoNotification']").prop("checked", true);
+    {{else}}
+    $("input[name='NotificationDate']").val("{{.Notification.Date}}");
+    $("input[name='NotificationTime']").val("{{.Notification.Time}}");
+    {{end}}
     $("textarea[name='Note']").val("{{.Note}}");
     $("#Delete").removeClass("hidden");
     $("#Delete").attr("href", "delete?ID={{.ID}}");
