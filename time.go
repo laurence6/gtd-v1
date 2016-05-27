@@ -20,20 +20,6 @@ func (t *Time) Get() int64 {
 	return t.sec
 }
 
-// Set sets the Time.sec
-func (t *Time) Set(sec int64) {
-	t.sec = sec
-	if t.sec != 0 {
-		datetime := time.Unix(t.sec, 0)
-		t.date = datetime.Format(DateLayout)
-		t.time = datetime.Format(TimeLayout)
-	} else {
-		t.date = ""
-		t.time = ""
-	}
-	return
-}
-
 // EqualZero returns if Time == 0
 func (t *Time) EqualZero() bool {
 	return t.sec == 0
@@ -47,6 +33,20 @@ func (t *Time) Date() string {
 // Time returns string of the time
 func (t *Time) Time() string {
 	return t.time
+}
+
+// Set sets the Time.sec
+func (t *Time) Set(sec int64) {
+	t.sec = sec
+	if t.sec != 0 {
+		datetime := time.Unix(t.sec, 0)
+		t.date = datetime.Format(DateLayout)
+		t.time = datetime.Format(TimeLayout)
+	} else {
+		t.date = ""
+		t.time = ""
+	}
+	return
 }
 
 // ParseDateTimeInLocation parses date & time string

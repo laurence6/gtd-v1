@@ -43,8 +43,8 @@ func (task *Task) Marshal(w io.Writer) error {
 }
 
 // Marshal serializes TaskPool to json objects and writes to Writer
-func (tp TaskPool) Marshal(w io.Writer) error {
-	for _, i := range tp {
+func (tp *TaskPool) Marshal(w io.Writer) error {
+	for _, i := range tp.tp {
 		if i.ParentTask == nil {
 			err := i.Marshal(w)
 			if err != nil {
@@ -56,8 +56,8 @@ func (tp TaskPool) Marshal(w io.Writer) error {
 }
 
 // UnmarshalTaskPool reads json objects from Reader and deserializes them to a TaskPool
-func UnmarshalTaskPool(r io.Reader) (TaskPool, error) {
-	tp := TaskPool{}
+func UnmarshalTaskPool(r io.Reader) (*TaskPool, error) {
+	tp := NewTaskPool()
 	decoder := json.NewDecoder(r)
 	for {
 		mt := marshalTask{}
@@ -68,10 +68,10 @@ func UnmarshalTaskPool(r io.Reader) (TaskPool, error) {
 		}
 		task := mt.Task
 		if mt.ParentTask != 0 {
-			task.ParentTask = tp[mt.ParentTask]
+			task.ParentTask = tp.Get(mt.ParentTask)
 			task.ParentTask.AddSubTask(&task)
 		}
-		tp[task.ID] = &task
+		tp.tp[task.ID] = &task
 	}
 	return tp, nil
 }

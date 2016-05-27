@@ -13,7 +13,7 @@ var (
 
 func newTask() *Task {
 	now := time.Now()
-	id := now.UnixNano() // FIXME: May be duplicate
+	id := now.UnixNano() // May be duplicate
 	start := now.Unix()
 
 	task := &Task{}
@@ -26,14 +26,46 @@ func newTask() *Task {
 }
 
 // TaskPool contains many *Task, using Task.ID as key
-type TaskPool map[int64]*Task
+type TaskPool struct {
+	tp map[int64]*Task
+}
+
+// NewTaskPool returns a *TaskPool
+func NewTaskPool() *TaskPool {
+	return &TaskPool{map[int64]*Task{}}
+}
+
+// Get returns a *Task using id as key. If id exists return true.
+func (tp *TaskPool) Get(id int64) *Task {
+	if !tp.Has(id) {
+		return nil
+	}
+	return tp.tp[id]
+}
+
+// GetAll returns all *Task in TaskPool
+func (tp *TaskPool) GetAll() []*Task {
+	taskList := []*Task{}
+	for _, i := range tp.tp {
+		taskList = append(taskList, i)
+	}
+	return taskList
+}
+
+// Has returns if TaskPool has this id
+func (tp *TaskPool) Has(id int64) bool {
+	if _, ok := tp.tp[id]; !ok {
+		return false
+	}
+	return true
+}
 
 // NewTask creates a *Task and stores it into TaskPool
-func (tp TaskPool) NewTask() (*Task, error) {
-	for n := 0; n < 5; n++ {
+func (tp *TaskPool) NewTask() (*Task, error) {
+	for n := 0; n < 3; n++ {
 		task := newTask()
-		if _, ok := tp[task.ID]; !ok {
-			tp[task.ID] = task
+		if !tp.Has(task.ID) {
+			tp.tp[task.ID] = task
 			return task, nil
 		}
 	}
@@ -41,17 +73,17 @@ func (tp TaskPool) NewTask() (*Task, error) {
 }
 
 // NewSubTask creates a sub *Task and stores it into TaskPool
-func (tp TaskPool) NewSubTask(task *Task) (*Task, error) {
-	if _, ok := tp[task.ID]; !ok {
+func (tp *TaskPool) NewSubTask(task *Task) (*Task, error) {
+	if !tp.Has(task.ID) {
 		return nil, ErrTaskNotFound
 	}
 
-	for n := 0; n < 5; n++ {
+	for n := 0; n < 3; n++ {
 		subTask := newTask()
-		if _, ok := tp[subTask.ID]; !ok {
+		if !tp.Has(subTask.ID) {
 			task.AddSubTask(subTask)
 			subTask.ParentTask = task
-			tp[subTask.ID] = subTask
+			tp.tp[subTask.ID] = subTask
 			return subTask, nil
 		}
 	}
@@ -59,11 +91,11 @@ func (tp TaskPool) NewSubTask(task *Task) (*Task, error) {
 }
 
 // Delete removes a *Task from TaskPool and its parent's SubTasks, then recursively deletes its subtasks
-func (tp TaskPool) Delete(task *Task) error {
-	if _, ok := tp[task.ID]; !ok {
+func (tp *TaskPool) Delete(task *Task) error {
+	if !tp.Has(task.ID) {
 		return ErrTaskNotFound
 	}
-	delete(tp, task.ID)
+	delete(tp.tp, task.ID)
 	if task.ParentTask != nil {
 		task.ParentTask.DeleteSubTask(task)
 		task.ParentTask = nil
@@ -81,8 +113,8 @@ func (tp TaskPool) Delete(task *Task) error {
 type FindFunc func(*Task) bool
 
 // Find finds a corresponding Task
-func (tp TaskPool) Find(f FindFunc) (*Task, error) {
-	for _, i := range tp {
+func (tp *TaskPool) Find(f FindFunc) (*Task, error) {
+	for _, i := range tp.tp {
 		if f(i) {
 			return i, nil
 		}
@@ -91,9 +123,9 @@ func (tp TaskPool) Find(f FindFunc) (*Task, error) {
 }
 
 // FindAll finds all corresponding Task
-func (tp TaskPool) FindAll(f FindFunc) ([]*Task, error) {
+func (tp *TaskPool) FindAll(f FindFunc) ([]*Task, error) {
 	tasks := []*Task{}
-	for _, i := range tp {
+	for _, i := range tp.tp {
 		if f(i) {
 			tasks = append(tasks, i)
 		}
