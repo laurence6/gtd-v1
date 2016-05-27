@@ -52,12 +52,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "", 404)
 		return
 	}
-	taskList := []*gtd.Task{}
-	for _, v := range tp {
-		//if v.ParentTask == nil {
-		taskList = append(taskList, v)
-		//}
-	}
+	taskList := tp.GetAll()
 	gtd.SortByDefault(taskList)
 	err := t.ExecuteTemplate(w, "index", taskList)
 	if err != nil {
@@ -83,7 +78,7 @@ func addSub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if id != 0 {
-		if task, ok := tp[id]; ok {
+		if task := tp.Get(id); task != nil {
 			subTask, err := tp.NewSubTask(task)
 			if err != nil {
 				log.Println(err.Error())
@@ -107,7 +102,7 @@ func edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if id != 0 {
-		if task, ok := tp[id]; ok {
+		if task := tp.Get(id); task != nil {
 			_ = t.ExecuteTemplate(w, "header", "")
 			_ = t.ExecuteTemplate(w, "form", "")
 			err = t.ExecuteTemplate(w, "parentsubtask", task)
@@ -152,7 +147,7 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 			}
 			http.Redirect(w, r, "", 302)
 			return
-		} else if task, ok := tp[id]; ok {
+		} else if task := tp.Get(id); task != nil {
 			err := updateTaskFromForm(task, r.PostForm)
 			if err != nil {
 				log.Println(err.Error())
@@ -175,7 +170,7 @@ func deleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if id != 0 {
-		if task, ok := tp[id]; ok {
+		if task := tp.Get(id); task != nil {
 			err := tp.Delete(task)
 			if err != nil {
 				log.Println(err.Error())
