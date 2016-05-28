@@ -23,7 +23,7 @@ var location, _ = time.LoadLocation("Local")
 
 var t *template.Template
 
-func web() {
+func init() {
 	var err error
 	t, err = template.ParseFiles(
 		"templates/add.html",
@@ -35,6 +35,9 @@ func web() {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
+}
+
+func web() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/add", add)
 	http.HandleFunc("/addSub", addSub)
