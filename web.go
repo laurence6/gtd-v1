@@ -17,9 +17,9 @@ const (
 	timeLayout = "15:04"
 )
 
-var location, _ = time.LoadLocation("Local")
-
 var errInvalid = errors.New("Invalid!")
+
+var location, _ = time.LoadLocation("Local")
 
 var t *template.Template
 
@@ -41,10 +41,10 @@ func web() {
 	http.HandleFunc("/edit", edit)
 	http.HandleFunc("/update", updateTask)
 	http.HandleFunc("/delete", deleteTask)
-	err = http.ListenAndServe(":8000", nil)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
+
+	log.Fatalln(http.ListenAndServe(":8000", nil))
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
