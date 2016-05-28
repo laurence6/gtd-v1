@@ -27,12 +27,16 @@ type byDue struct {
 }
 
 func (bd byDue) Less(i, j int) bool {
-	a := bd.index[i].Due
-	b := bd.index[j].Due
-	if a == b {
-		return bd.index[i].Priority < bd.index[j].Priority
+	a := bd.index[i]
+	b := bd.index[j]
+	switch {
+	case a.Due.sec != b.Due.sec:
+		return earlier(a.Due, b.Due)
+	case a.Priority != b.Priority:
+		return a.Priority < b.Priority
+	default:
+		return a.ID < b.ID
 	}
-	return earlier(a, b)
 }
 
 type byPriority struct {
@@ -40,12 +44,22 @@ type byPriority struct {
 }
 
 func (bp byPriority) Less(i, j int) bool {
-	a := bp.index[i].Priority
-	b := bp.index[j].Priority
-	if a == b {
-		return earlier(bp.index[i].Due, bp.index[j].Due)
+	a := bp.index[i]
+	b := bp.index[j]
+	switch {
+	case a.Priority != b.Priority:
+		return a.Priority < b.Priority
+	case a.Due.sec != b.Due.sec:
+		return earlier(a.Due, b.Due)
+	default:
+		return a.ID < b.ID
 	}
-	return a < b
+}
+
+// SortByDue sorts []*Task by Due
+func SortByDue(taskList []*Task) {
+	bd := byDue{taskList}
+	sort.Sort(bd)
 }
 
 // SortByDefault sorts []*Task by default algorithm
@@ -75,9 +89,8 @@ func SortByDefault(taskList []*Task) {
 	}
 	n := 0
 	for _, l := range lists {
-		bd := byDue{l}
-		sort.Sort(bd)
-		for _, i := range bd.index {
+		SortByDue(l)
+		for _, i := range l {
 			taskList[n] = i
 			n++
 		}
