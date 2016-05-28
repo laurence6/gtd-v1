@@ -47,7 +47,9 @@ func web() {
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
 
-	log.Fatalln(http.ListenAndServe(":8000", nil))
+	go func() {
+		log.Fatalln(http.ListenAndServe(":8000", nil))
+	}()
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
