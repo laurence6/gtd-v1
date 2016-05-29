@@ -39,6 +39,25 @@ func (bd byDue) Less(i, j int) bool {
 	}
 }
 
+type byNotification struct {
+	index
+}
+
+func (bn byNotification) Less(i, j int) bool {
+	a := bn.index[i]
+	b := bn.index[j]
+	switch {
+	case a.Notification.sec != b.Notification.sec:
+		return earlier(a.Notification, b.Notification)
+	case a.Due.sec != b.Due.sec:
+		return earlier(a.Due, b.Due)
+	case a.Priority != b.Priority:
+		return a.Priority < b.Priority
+	default:
+		return a.ID < b.ID
+	}
+}
+
 type byPriority struct {
 	index
 }
@@ -60,6 +79,12 @@ func (bp byPriority) Less(i, j int) bool {
 func SortByDue(taskList []*Task) {
 	bd := byDue{taskList}
 	sort.Sort(bd)
+}
+
+// SortByNotification sorts []*Task by Notification.
+func SortByNotification(taskList []*Task) {
+	bn := byNotification{taskList}
+	sort.Sort(bn)
 }
 
 // SortByDefault sorts []*Task by default algorithm.
