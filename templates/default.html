@@ -4,38 +4,67 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GTD</title>
-  <link href="css/bootstrap.min.css" rel="stylesheet">
-  <link href="css/custom.css" rel="stylesheet">
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="css/AdminLTE.min.css">
+  <link rel="stylesheet" href="css/skins/skin-blue.min.css">
+  <link rel="stylesheet" href="css/custom.css">
 </head>
 
-<body>
-  <nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="/">Home</a>
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-      </div>
-      <div class="collapse navbar-collapse" id="navbar-collapse">
-        <ul class="nav navbar-nav">
-          <li><a href="add">Add</a></li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-  <div class="container">
+<body class="hold-transition skin-blue fixed sidebar-mini">
+<div class="wrapper">
+
+  <header class="main-header">
+    <a href="/" class="logo">
+      <span class="logo-mini"><b>D</b></span>
+      <span class="logo-lg">GT<b>D</b></span>
+    </a>
+    <nav class="navbar navbar-static-top" role="navigation">
+      <a href="/" class="sidebar-toggle" data-toggle="offcanvas" role="button"></a>
+    </nav>
+  </header>
+
+  <aside class="main-sidebar">
+    <section class="sidebar">
+      <ul class="sidebar-menu">
+        <li><a href="/"><i class="fa fa-link"></i> <span>All</span></a></li>
+        <li><a href="/"><i class="fa fa-link"></i> <span>Today</span></a></li>
+        <li class="treeview">
+          <a href="/"><i class="fa fa-link"></i> <span>Multilevel</span> <i class="fa fa-angle-left pull-right"></i></a>
+          <ul class="treeview-menu">
+            <li><a href="/">Link in level 2</a></li>
+            <li><a href="/">Link in level 2</a></li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+  </aside>
+
+  <div class="content-wrapper">
+    <section class="content row">
 {{end}}
 
 {{define "footer"}}
+    </section>
   </div>
 
-  <script src="js/jquery.min.js"></script>
-  <script src="js/bootstrap.min.js"></script>
+  <footer class="main-footer">
+  </footer>
+
+</div>
+
+<script src="js/jquery.min.js"></script>
+<script src="js/jquery.slimscroll.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/AdminLTEOptions.js"></script>
+<script src="js/app.min.js"></script>
+<script>
+  window.onhashchange = function() {
+    alert(location.hash.substring(1));
+  };
+</script>
 </body>
 </html>
 {{end}}

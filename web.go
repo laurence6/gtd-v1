@@ -44,6 +44,7 @@ func web() {
 	http.HandleFunc("/edit", edit)
 	http.HandleFunc("/update", updateTask)
 	http.HandleFunc("/delete", deleteTask)
+
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
 
