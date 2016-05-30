@@ -1,5 +1,5 @@
 {{define "form"}}
-<form action="update" method="post" class="col-xs-12 col-sm-8">
+<form class="col-xs-12 col-sm-8">
   <div class="form-group">
     <label>ID</label>
     <input type="text" name="ID" class="form-control" readonly>
@@ -87,17 +87,24 @@
   </div>
 
   <div class="form-group">
-    <a type="botton" href="" id="Delete" class="btn btn-danger form-control hidden">Delete</a>
+    <a type="button" href="" id="Delete" class="btn btn-danger form-control hidden">Delete</a>
   </div>
 </form>
+
+<script>
+  $("form").submit(function(event) {
+    event.preventDefault();
+    update("update", $("form").serialize());
+  });
+</script>
 {{end}}
 
 {{define "parentsubtask"}}
 <div class="col-xs-12 col-sm-4">
   <h3>Parent Task</h3>
   {{if .ParentTask}}
-  <a href="edit?ID={{.ParentTask.ID}}">
-    <h4>{{.ParentTask.Subject}}</h4>
+  <a href="#edit?ID={{.ParentTask.ID}}">
+    <h4><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.ParentTask.Subject}}</h4>
     <p class="text-right">{{.ParentTask.Due.Date}} {{.ParentTask.Due.Time}}</p>
   </a>
   {{else}}
@@ -107,14 +114,14 @@
   <h3>Sub Tasks</h3>
   {{if .SubTasks}}
   {{range .SubTasks}}
-  <a href="edit?ID={{.ID}}">
-    <h4>{{.Subject}}</h4>
+  <a href="#edit?ID={{.ID}}">
+    <h4><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</h4>
     <p class="text-right">{{.Due.Date}} {{.Due.Time}}</p>
   </a>
   {{end}}
   {{else}}
   <p>None</p>
   {{end}}
-  <a href="addSub?ID={{.ID}}">Add</a>
+  <a href="#addSub?ID={{.ID}}">Add</a>
 </div>
 {{end}}

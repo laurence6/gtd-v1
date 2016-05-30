@@ -1,28 +1,33 @@
 {{define "index"}}
-{{template "header"}}
-<ul class="col-xs-12 col-sm-8 list-group">
+<ul class="col-xs-12 col-sm-7 list-group">
+  <a type="button" href="#add" class="btn btn-default">Add</a>
   {{range .}}
-    <a href="javascript:void(0)" onclick="$(this).next().slideToggle(200);" class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
-      <h4 class="col-xs-12 col-sm-8"><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</h4>
-      <h4 class="col-xs-6 col-sm-4 text-nowrap">{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</h4>
-    </a>
-    <li class="row list-group-item" style="display:none;">
-      <a href="edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
-      <a href="delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
-      {{if .SubTasks}}
-      <ul class="col-xs-12 col-sm-12 list-group">
-        {{range .SubTasks}}
-        <li class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
-            <p class="col-xs-12 col-sm-8"><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</p>
-            <p class="col-xs-6 col-sm-4 text-nowrap">{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</p>
-            <a href="edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
-            <a href="delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
-        </li>
-        {{end}}
-      </ul>
+  <a href="javascript:void(0)" onclick="$(this).next().slideToggle(200);" class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
+    <h4 class="text-nowrap">
+      <span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}
+      <span class="pull-right">{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</span>
+    </h4>
+  </a>
+  <li class="row list-group-item" style="display:none;">
+    <a href="#edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
+    <a href="#delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
+    {{if .SubTasks}}
+    <ul class="col-xs-12 col-sm-12 list-group">
+      {{range .SubTasks}}
+      <li class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
+        <p class="text-nowrap">
+          <span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}
+          <span class="pull-right">{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</span>
+        </p>
+      </li>
+      <li class="row list-group-item">
+        <a href="#edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
+        <a href="#delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
+      </li>
       {{end}}
-    </li>
+    </ul>
+    {{end}}
+  </li>
   {{end}}
 </ul>
-{{template "footer"}}
 {{end}}

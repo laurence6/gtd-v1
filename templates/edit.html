@@ -1,6 +1,6 @@
 {{define "edit"}}
 <script>
-$(document).ready(function() {
+$(function() {
     $("input[name='ID']").val("{{.ID}}");
     $("input[name='Subject']").val("{{.Subject}}");
     {{if .Due.EqualZero}}
@@ -23,7 +23,7 @@ $(document).ready(function() {
     {{end}}
     $("textarea[name='Note']").val("{{.Note}}");
     $("#Delete").removeClass("hidden");
-    $("#Delete").attr("href", "delete?ID={{.ID}}");
+    $("#Delete").attr("href", "#delete?ID={{.ID}}");
 });
 </script>
 {{end}}
