@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -40,12 +41,12 @@ func init() {
 
 func web() {
 	http.HandleFunc("/", landing)
-	http.HandleFunc("/index", jsonWrapper(index))
-	http.HandleFunc("/add", jsonWrapper(add))
-	http.HandleFunc("/addSub", jsonWrapper(addSub))
-	http.HandleFunc("/edit", jsonWrapper(edit))
-	http.HandleFunc("/update", jsonWrapper(updateTask))
-	http.HandleFunc("/delete", jsonWrapper(deleteTask))
+	http.HandleFunc("/index", handlerFuncWrapper(index))
+	http.HandleFunc("/add", handlerFuncWrapper(add))
+	http.HandleFunc("/addSub", handlerFuncWrapper(addSub))
+	http.HandleFunc("/edit", handlerFuncWrapper(edit))
+	http.HandleFunc("/update", handlerFuncWrapper(updateTask))
+	http.HandleFunc("/delete", handlerFuncWrapper(deleteTask))
 
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
@@ -58,7 +59,7 @@ func web() {
 
 func landing(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.Redirect(w, r, "/", 302)
+		httpError(w, 404, "")
 		return
 	}
 	t.ExecuteTemplate(w, "default", "")
@@ -73,13 +74,16 @@ func newResponseJSON() *responseJSON {
 	return &responseJSON{200, ""}
 }
 
-func jsonWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
+func handlerFuncWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			httpError(w, 405, "POST")
+			return
+		}
 		response := f(r)
 		jsonObj, err := json.Marshal(response)
 		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
+			httpError(w, 500, err.Error())
 			return
 		}
 		w.Write(jsonObj)
@@ -93,7 +97,7 @@ func index(r *http.Request) *responseJSON {
 	err := t.ExecuteTemplate(b, "index", defaultIndex)
 	if err != nil {
 		log.Println(err.Error())
-		oops(response, err.Error())
+		jsonOops(response, err.Error())
 		return response
 	}
 	response.Content = b.String()
@@ -106,7 +110,7 @@ func add(r *http.Request) *responseJSON {
 	err := t.ExecuteTemplate(b, "form", "")
 	if err != nil {
 		log.Println(err.Error())
-		oops(response, err.Error())
+		jsonOops(response, err.Error())
 		return response
 	}
 	response.Content = b.String()
@@ -119,7 +123,7 @@ func addSub(r *http.Request) *responseJSON {
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		oops(response, err.Error())
+		jsonOops(response, err.Error())
 		return response
 	}
 	if id != 0 {
@@ -133,14 +137,14 @@ func addSub(r *http.Request) *responseJSON {
 			tp.Changed()
 			if err != nil {
 				log.Println(err.Error())
-				oops(response, err.Error())
+				jsonOops(response, err.Error())
 				return response
 			}
-			redirect(response, "edit?ID="+strconv.FormatInt(subTask.ID, 10))
+			jsonRedirect(response, "edit?ID="+strconv.FormatInt(subTask.ID, 10))
 			return response
 		}
 	}
-	redirect(response, "add")
+	jsonRedirect(response, "add")
 	return response
 }
 
@@ -150,7 +154,7 @@ func edit(r *http.Request) *responseJSON {
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		oops(response, err.Error())
+		jsonOops(response, err.Error())
 		return response
 	}
 	b := &bytes.Buffer{}
@@ -163,20 +167,20 @@ func edit(r *http.Request) *responseJSON {
 			err = t.ExecuteTemplate(b, "parentsubtask", task)
 			if err != nil {
 				log.Println(err.Error())
-				oops(response, err.Error())
+				jsonOops(response, err.Error())
 				return response
 			}
 			err = t.ExecuteTemplate(b, "edit", task)
 			if err != nil {
 				log.Println(err.Error())
-				oops(response, err.Error())
+				jsonOops(response, err.Error())
 				return response
 			}
 			response.Content = b.String()
 			return response
 		}
 	}
-	redirect(response, "add")
+	jsonRedirect(response, "add")
 	return response
 }
 
@@ -186,7 +190,7 @@ func updateTask(r *http.Request) *responseJSON {
 	id, err := stoI64(r.PostForm.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		oops(response, err.Error())
+		jsonOops(response, err.Error())
 		return response
 	}
 	if id == 0 {
@@ -195,7 +199,7 @@ func updateTask(r *http.Request) *responseJSON {
 		tp.Unlock()
 		if err != nil {
 			log.Println(err.Error())
-			oops(response, err.Error())
+			jsonOops(response, err.Error())
 			tp.Delete(task)
 			return response
 		}
@@ -204,12 +208,12 @@ func updateTask(r *http.Request) *responseJSON {
 		tp.Unlock()
 		if err != nil {
 			log.Println(err.Error())
-			oops(response, err.Error())
+			jsonOops(response, err.Error())
 			tp.Delete(task)
 			return response
 		}
 		tp.Changed()
-		redirect(response, "index")
+		jsonRedirect(response, "index")
 		return response
 	}
 	tp.RLock()
@@ -221,14 +225,14 @@ func updateTask(r *http.Request) *responseJSON {
 		tp.Unlock()
 		if err != nil {
 			log.Println(err.Error())
-			oops(response, err.Error())
+			jsonOops(response, err.Error())
 			return response
 		}
 		tp.Changed()
-		redirect(response, "index")
+		jsonRedirect(response, "index")
 		return response
 	}
-	oops(response, errInvalid.Error())
+	jsonOops(response, errInvalid.Error())
 	return response
 }
 
@@ -238,7 +242,7 @@ func deleteTask(r *http.Request) *responseJSON {
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		oops(response, err.Error())
+		jsonOops(response, err.Error())
 		return response
 	}
 	if id != 0 {
@@ -251,24 +255,36 @@ func deleteTask(r *http.Request) *responseJSON {
 			tp.Unlock()
 			if err != nil {
 				log.Println(err.Error())
-				oops(response, err.Error())
+				jsonOops(response, err.Error())
 				return response
 			}
 			tp.Changed()
-			redirect(response, "index")
+			jsonRedirect(response, "index")
 			return response
 		}
 	}
-	oops(response, errInvalid.Error())
+	jsonOops(response, errInvalid.Error())
 	return response
 }
 
-func redirect(r *responseJSON, content string) {
+var httpErrorMessage = map[int]string{
+	404: "404 NotFound",
+	405: "405 MethodNotAllowed",
+	500: "500 InternalServerError",
+}
+
+func httpError(w http.ResponseWriter, code int, message string) {
+	w.WriteHeader(code)
+	codeMessage := httpErrorMessage[code]
+	fmt.Fprintf(w, "<html><body><center><h1>%s</h1></center><p>%s</p></body></html>", codeMessage, message)
+}
+
+func jsonRedirect(r *responseJSON, content string) {
 	r.StatusCode = 302
 	r.Content = content
 }
 
-func oops(r *responseJSON, content string) {
+func jsonOops(r *responseJSON, content string) {
 	r.StatusCode = 500
 	r.Content = "Oops: " + content
 }
