@@ -48,9 +48,9 @@ func web() {
 	http.HandleFunc("/update", handlerFuncWrapper(updateTask))
 	http.HandleFunc("/delete", handlerFuncWrapper(deleteTask))
 
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("js"))))
-	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("fonts"))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
+	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("static/fonts"))))
 
 	go func() {
 		log.Fatalln(http.ListenAndServe(":8000", nil))
