@@ -3,10 +3,56 @@ ul .row {
     margin-right: 0;
 }
 
-ul .box {
-    margin-bottom: 2px;
+.task-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: auto;
 }
-
-.box-body ul {
-    margin-bottom: 0;
+.task-list > li {
+    border-radius: 2px;
+    padding: 10px;
+    background: #f4f4f4;
+    margin-bottom: 2px;
+    border-left: 2px solid #e6e7e8;
+    color: #444;
+}
+/* Unused
+.task-list > li.done {
+    color: #999;
+}
+.task-list > li.done .text {
+    text-decoration: line-through;
+}
+.task-list > li.done .label {
+    background: #d2d6de !important;
+}
+*/
+.task-list > li.danger {
+    border-color: #dd4b39;
+}
+.task-list > li.warning {
+    border-color: #f39c12;
+}
+.task-list > li.info {
+    border-color: #00c0ef;
+}
+.task-list > li.success {
+    border-color: #00a65a;
+}
+.task-list > li.primary {
+    border-color: #3c8dbc;
+}
+.task-list > li > .task-header {
+    display: flex;
+    justify-content: space-between;
+}
+.task-list > li > .task-header:hover {
+    cursor: pointer;
+}
+.task-list > li > .task-body {
+    display: none;
+}
+.task-list > li > .task-body > .task-body-item {
+    margin-top: 10px;
 }

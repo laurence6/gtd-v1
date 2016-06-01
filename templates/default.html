@@ -79,8 +79,8 @@
         case 302:
           location.hash = data.Content;
           break;
-        case 500:
-          alert(data.Content);
+        default:
+          alert(data.StatusCode+": "+data.Content);
           break;
         }
       },
