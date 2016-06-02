@@ -94,7 +94,7 @@
 <script>
   $("form").submit(function(event) {
     event.preventDefault();
-    update("update", $("form").serialize());
+    update("/update", $("form").serialize());
   });
 </script>
 {{end}}
@@ -103,7 +103,7 @@
 <div class="col-xs-12 col-sm-4">
   <h3>Parent Task</h3>
   {{if .ParentTask}}
-  <a href="#edit?ID={{.ParentTask.ID}}">
+  <a href="#/edit?ID={{.ParentTask.ID}}">
     <h4><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.ParentTask.Subject}}</h4>
     <p class="text-right">{{.ParentTask.Due.Date}} {{.ParentTask.Due.Time}}</p>
   </a>
@@ -114,7 +114,7 @@
   <h3>Sub Tasks</h3>
   {{if .SubTasks}}
   {{range .SubTasks}}
-  <a href="#edit?ID={{.ID}}">
+  <a href="#/edit?ID={{.ID}}">
     <h4><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</h4>
     <p class="text-right">{{.Due.Date}} {{.Due.Time}}</p>
   </a>
@@ -122,6 +122,6 @@
   {{else}}
   <p>None</p>
   {{end}}
-  <a href="#addSub?ID={{.ID}}">Add</a>
+  <a href="#/addSub?ID={{.ID}}">Add</a>
 </div>
 {{end}}

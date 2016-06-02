@@ -30,7 +30,7 @@ $(function() {
     $("textarea[name='Note']").val("{{js .Note}}");
 
     $("#Delete").removeClass("hidden");
-    $("#Delete").attr("href", "#delete?ID={{.ID}}");
+    $("#Delete").attr("href", "#/delete?ID={{.ID}}");
 });
 </script>
 {{end}}

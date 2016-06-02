@@ -140,11 +140,11 @@ func addSub(r *http.Request) *responseJSON {
 				jsonOops(response, err.Error())
 				return response
 			}
-			jsonRedirect(response, "edit?ID="+strconv.FormatInt(subTask.ID, 10))
+			jsonRedirect(response, "/edit?ID="+strconv.FormatInt(subTask.ID, 10))
 			return response
 		}
 	}
-	jsonRedirect(response, "add")
+	jsonRedirect(response, "/add")
 	return response
 }
 
@@ -180,7 +180,7 @@ func edit(r *http.Request) *responseJSON {
 			return response
 		}
 	}
-	jsonRedirect(response, "add")
+	jsonRedirect(response, "/add")
 	return response
 }
 
@@ -213,7 +213,7 @@ func updateTask(r *http.Request) *responseJSON {
 			return response
 		}
 		tp.Changed()
-		jsonRedirect(response, "index")
+		jsonRedirect(response, "/index")
 		return response
 	}
 	tp.RLock()
@@ -229,7 +229,7 @@ func updateTask(r *http.Request) *responseJSON {
 			return response
 		}
 		tp.Changed()
-		jsonRedirect(response, "index")
+		jsonRedirect(response, "/index")
 		return response
 	}
 	jsonOops(response, errInvalid.Error())
@@ -259,7 +259,7 @@ func deleteTask(r *http.Request) *responseJSON {
 				return response
 			}
 			tp.Changed()
-			jsonRedirect(response, "index")
+			jsonRedirect(response, "/index")
 			return response
 		}
 	}
