@@ -98,7 +98,7 @@ func index(r *http.Request) *responseJSON {
 	err := t.ExecuteTemplate(b, "index", defaultIndex)
 	if err != nil {
 		log.Println(err.Error())
-		jsonOops(response, err.Error())
+		jsonError(response, err.Error())
 		return response
 	}
 	response.Content = b.String()
@@ -111,7 +111,7 @@ func addTask(r *http.Request) *responseJSON {
 	err := t.ExecuteTemplate(b, "form", "")
 	if err != nil {
 		log.Println(err.Error())
-		jsonOops(response, err.Error())
+		jsonError(response, err.Error())
 		return response
 	}
 	response.Content = b.String()
@@ -124,7 +124,7 @@ func addSubTask(r *http.Request) *responseJSON {
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		jsonOops(response, err.Error())
+		jsonError(response, err.Error())
 		return response
 	}
 	if id != 0 {
@@ -138,7 +138,7 @@ func addSubTask(r *http.Request) *responseJSON {
 			tp.Changed()
 			if err != nil {
 				log.Println(err.Error())
-				jsonOops(response, err.Error())
+				jsonError(response, err.Error())
 				return response
 			}
 			jsonRedirect(response, "/edit?ID="+strconv.FormatInt(subTask.ID, 10))
@@ -155,7 +155,7 @@ func editTask(r *http.Request) *responseJSON {
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		jsonOops(response, err.Error())
+		jsonError(response, err.Error())
 		return response
 	}
 	b := &bytes.Buffer{}
@@ -168,13 +168,13 @@ func editTask(r *http.Request) *responseJSON {
 			err = t.ExecuteTemplate(b, "parentsubtask", task)
 			if err != nil {
 				log.Println(err.Error())
-				jsonOops(response, err.Error())
+				jsonError(response, err.Error())
 				return response
 			}
 			err = t.ExecuteTemplate(b, "edit", task)
 			if err != nil {
 				log.Println(err.Error())
-				jsonOops(response, err.Error())
+				jsonError(response, err.Error())
 				return response
 			}
 			response.Content = b.String()
@@ -191,7 +191,7 @@ func doneTask(r *http.Request) *responseJSON {
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		jsonOops(response, err.Error())
+		jsonError(response, err.Error())
 		return response
 	}
 	if id != 0 {
@@ -204,7 +204,7 @@ func doneTask(r *http.Request) *responseJSON {
 			rw.Unlock()
 			if err != nil {
 				log.Println(err.Error())
-				jsonOops(response, err.Error())
+				jsonError(response, err.Error())
 				return response
 			}
 			tp.Changed()
@@ -212,8 +212,7 @@ func doneTask(r *http.Request) *responseJSON {
 			return response
 		}
 	}
-	jsonOops(response, errInvalid.Error())
-	return response
+	jsonError(response, errInvalid.Error())
 	return response
 }
 
@@ -223,7 +222,7 @@ func deleteTask(r *http.Request) *responseJSON {
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		jsonOops(response, err.Error())
+		jsonError(response, err.Error())
 		return response
 	}
 	if id != 0 {
@@ -236,7 +235,7 @@ func deleteTask(r *http.Request) *responseJSON {
 			rw.Unlock()
 			if err != nil {
 				log.Println(err.Error())
-				jsonOops(response, err.Error())
+				jsonError(response, err.Error())
 				return response
 			}
 			tp.Changed()
@@ -244,7 +243,7 @@ func deleteTask(r *http.Request) *responseJSON {
 			return response
 		}
 	}
-	jsonOops(response, errInvalid.Error())
+	jsonError(response, errInvalid.Error())
 	return response
 }
 
@@ -254,7 +253,7 @@ func updateTask(r *http.Request) *responseJSON {
 	id, err := stoI64(r.PostForm.Get("ID"))
 	if err != nil {
 		log.Println(err.Error())
-		jsonOops(response, err.Error())
+		jsonError(response, err.Error())
 		return response
 	}
 	if id == 0 {
@@ -263,7 +262,7 @@ func updateTask(r *http.Request) *responseJSON {
 		rw.Unlock()
 		if err != nil {
 			log.Println(err.Error())
-			jsonOops(response, err.Error())
+			jsonError(response, err.Error())
 			tp.Delete(task)
 			return response
 		}
@@ -272,7 +271,7 @@ func updateTask(r *http.Request) *responseJSON {
 		rw.Unlock()
 		if err != nil {
 			log.Println(err.Error())
-			jsonOops(response, err.Error())
+			jsonError(response, err.Error())
 			tp.Delete(task)
 			return response
 		}
@@ -289,14 +288,14 @@ func updateTask(r *http.Request) *responseJSON {
 		rw.Unlock()
 		if err != nil {
 			log.Println(err.Error())
-			jsonOops(response, err.Error())
+			jsonError(response, err.Error())
 			return response
 		}
 		tp.Changed()
 		jsonRedirect(response, "/index")
 		return response
 	}
-	jsonOops(response, errInvalid.Error())
+	jsonError(response, errInvalid.Error())
 	return response
 }
 
@@ -317,7 +316,7 @@ func jsonRedirect(r *responseJSON, content string) {
 	r.Content = content
 }
 
-func jsonOops(r *responseJSON, content string) {
+func jsonError(r *responseJSON, content string) {
 	r.StatusCode = 500
 	r.Content = "Oops: " + content
 }
