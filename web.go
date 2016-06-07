@@ -42,11 +42,12 @@ func init() {
 func web() {
 	http.HandleFunc("/", landing)
 	http.HandleFunc("/index", handlerFuncWrapper(index))
-	http.HandleFunc("/add", handlerFuncWrapper(add))
-	http.HandleFunc("/addSub", handlerFuncWrapper(addSub))
-	http.HandleFunc("/edit", handlerFuncWrapper(edit))
-	http.HandleFunc("/update", handlerFuncWrapper(updateTask))
+	http.HandleFunc("/add", handlerFuncWrapper(addTask))
+	http.HandleFunc("/addSub", handlerFuncWrapper(addSubTask))
+	http.HandleFunc("/edit", handlerFuncWrapper(editTask))
+	http.HandleFunc("/done", handlerFuncWrapper(doneTask))
 	http.HandleFunc("/delete", handlerFuncWrapper(deleteTask))
+	http.HandleFunc("/update", handlerFuncWrapper(updateTask))
 
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
@@ -104,7 +105,7 @@ func index(r *http.Request) *responseJSON {
 	return response
 }
 
-func add(r *http.Request) *responseJSON {
+func addTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 	err := t.ExecuteTemplate(b, "form", "")
@@ -117,7 +118,7 @@ func add(r *http.Request) *responseJSON {
 	return response
 }
 
-func addSub(r *http.Request) *responseJSON {
+func addSubTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
@@ -148,7 +149,7 @@ func addSub(r *http.Request) *responseJSON {
 	return response
 }
 
-func edit(r *http.Request) *responseJSON {
+func editTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
@@ -181,6 +182,69 @@ func edit(r *http.Request) *responseJSON {
 		}
 	}
 	jsonRedirect(response, "/add")
+	return response
+}
+
+func doneTask(r *http.Request) *responseJSON {
+	response := newResponseJSON()
+	r.ParseForm()
+	id, err := stoI64(r.Form.Get("ID"))
+	if err != nil {
+		log.Println(err.Error())
+		jsonOops(response, err.Error())
+		return response
+	}
+	if id != 0 {
+		rw.RLock()
+		task := tp.Get(id)
+		rw.RUnlock()
+		if task != nil {
+			rw.Lock()
+			err := tp.Done(task)
+			rw.Unlock()
+			if err != nil {
+				log.Println(err.Error())
+				jsonOops(response, err.Error())
+				return response
+			}
+			tp.Changed()
+			jsonRedirect(response, "/index")
+			return response
+		}
+	}
+	jsonOops(response, errInvalid.Error())
+	return response
+	return response
+}
+
+func deleteTask(r *http.Request) *responseJSON {
+	response := newResponseJSON()
+	r.ParseForm()
+	id, err := stoI64(r.Form.Get("ID"))
+	if err != nil {
+		log.Println(err.Error())
+		jsonOops(response, err.Error())
+		return response
+	}
+	if id != 0 {
+		rw.RLock()
+		task := tp.Get(id)
+		rw.RUnlock()
+		if task != nil {
+			rw.Lock()
+			err := tp.Delete(task)
+			rw.Unlock()
+			if err != nil {
+				log.Println(err.Error())
+				jsonOops(response, err.Error())
+				return response
+			}
+			tp.Changed()
+			jsonRedirect(response, "/index")
+			return response
+		}
+	}
+	jsonOops(response, errInvalid.Error())
 	return response
 }
 
@@ -231,37 +295,6 @@ func updateTask(r *http.Request) *responseJSON {
 		tp.Changed()
 		jsonRedirect(response, "/index")
 		return response
-	}
-	jsonOops(response, errInvalid.Error())
-	return response
-}
-
-func deleteTask(r *http.Request) *responseJSON {
-	response := newResponseJSON()
-	r.ParseForm()
-	id, err := stoI64(r.Form.Get("ID"))
-	if err != nil {
-		log.Println(err.Error())
-		jsonOops(response, err.Error())
-		return response
-	}
-	if id != 0 {
-		tp.RLock()
-		task := tp.Get(id)
-		tp.RUnlock()
-		if task != nil {
-			tp.Lock()
-			err := tp.Delete(task)
-			tp.Unlock()
-			if err != nil {
-				log.Println(err.Error())
-				jsonOops(response, err.Error())
-				return response
-			}
-			tp.Changed()
-			jsonRedirect(response, "/index")
-			return response
-		}
 	}
 	jsonOops(response, errInvalid.Error())
 	return response

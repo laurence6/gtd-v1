@@ -26,7 +26,8 @@
             <pre class="task-body-item">{{.Note}}</pre>
             {{end}}
             <div class="task-body-item row">
-              <a href="#/edit?ID={{.ID}}" class="col-xs-6 col-md-3"><i class="fa fa-edit"></i> Edit</a>
+              <a href="#/edit?ID={{.ID}}" class="col-xs-6 col-md-3 text-primary"><i class="fa fa-edit"></i> Edit</a>
+              <a href="#/done?ID={{.ID}}" class="col-xs-6 col-md-3 text-success"><i class="fa fa-check"></i> Done</a>
               <a href="#/delete?ID={{.ID}}" class="col-xs-6 col-md-3 text-danger"><i class="fa fa-trash"></i> Delete</a>
             </div>
           </div>
@@ -36,7 +37,8 @@
       {{end}}
       {{end}}
       <div class="task-body-item row">
-        <a href="#/edit?ID={{.ID}}" class="col-xs-6 col-md-3"><i class="fa fa-edit"></i> Edit</a>
+        <a href="#/edit?ID={{.ID}}" class="col-xs-6 col-md-3 text-primary"><i class="fa fa-edit"></i> Edit</a>
+        <a href="#/done?ID={{.ID}}" class="col-xs-6 col-md-3 text-success"><i class="fa fa-check"></i> Done</a>
         <a href="#/delete?ID={{.ID}}" class="col-xs-6 col-md-3 text-danger"><i class="fa fa-trash"></i> Delete</a>
       </div>
     </div>

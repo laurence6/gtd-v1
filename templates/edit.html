@@ -29,6 +29,8 @@ $(function() {
 
     $("textarea[name='Note']").val("{{js .Note}}");
 
+    $("#Done").removeClass("hidden");
+    $("#Done").attr("href", "#/done?ID={{.ID}}");
     $("#Delete").removeClass("hidden");
     $("#Delete").attr("href", "#/delete?ID={{.ID}}");
 });
