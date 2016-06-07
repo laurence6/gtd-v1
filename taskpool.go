@@ -25,9 +25,9 @@ func newTask() *Task {
 	return task
 }
 
-// TaskPool contains many *Task, using Task.ID as key.
+// TaskPool contains many *Task, using Task.ID as key. It is not thread safe.
 type TaskPool struct {
-	tp map[int64]*Task
+	tp    map[int64]*Task
 	hooks []func()
 }
 
@@ -58,10 +58,10 @@ func (tp *TaskPool) GetAll() []*Task {
 
 // Has returns if TaskPool has this id.
 func (tp *TaskPool) Has(id int64) bool {
-	if _, ok := tp.tp[id]; !ok {
-		return false
+	if _, ok := tp.tp[id]; ok {
+		return true
 	}
-	return true
+	return false
 }
 
 // NewTask creates a *Task and stores it into TaskPool.
@@ -110,6 +110,32 @@ func (tp *TaskPool) Delete(task *Task) error {
 		task.ParentTask.DeleteSubTask(task)
 		task.ParentTask = nil
 	}
+	return nil
+}
+
+// Done deletes the task if task.Next == 0, or it add Due, Next, Notification by Next-Start and set Start = Next.
+func (tp *TaskPool) Done(task *Task) error {
+	if !tp.Has(task.ID) {
+		return ErrTaskNotFound
+	}
+	if task.Next.EqualZero() {
+		return tp.Delete(task)
+	}
+	for n := len(task.SubTasks); n > 0; n-- {
+		err := tp.Done(task.SubTasks[0])
+		if err != nil {
+			return err
+		}
+	}
+	delta := task.Next.Get()/86400*86400 - task.Start/86400*86400
+	task.Start = task.Next.Get()
+	if !task.Due.EqualZero() {
+		task.Due.Set(task.Due.Get() + delta)
+	}
+	if !task.Notification.EqualZero() {
+		task.Notification.Set(task.Notification.Get() + delta)
+	}
+	task.Next.Set(task.Next.Get() + delta)
 	return nil
 }
 
