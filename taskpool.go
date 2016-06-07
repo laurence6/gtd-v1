@@ -25,17 +25,17 @@ func newTask() *Task {
 	return task
 }
 
-// TaskPool contains many *Task, using Task.ID as key
+// TaskPool contains many *Task, using Task.ID as key.
 type TaskPool struct {
 	tp map[int64]*Task
 }
 
-// NewTaskPool returns a *TaskPool
+// NewTaskPool returns a *TaskPool.
 func NewTaskPool() *TaskPool {
 	return &TaskPool{map[int64]*Task{}}
 }
 
-// Get returns a *Task using id as key. If id exists return true.
+// Get returns a *Task using id as key.
 func (tp *TaskPool) Get(id int64) *Task {
 	if !tp.Has(id) {
 		return nil
@@ -43,7 +43,7 @@ func (tp *TaskPool) Get(id int64) *Task {
 	return tp.tp[id]
 }
 
-// GetAll returns all *Task in TaskPool
+// GetAll returns all *Task in TaskPool.
 func (tp *TaskPool) GetAll() []*Task {
 	taskList := []*Task{}
 	for _, i := range tp.tp {
@@ -52,7 +52,7 @@ func (tp *TaskPool) GetAll() []*Task {
 	return taskList
 }
 
-// Has returns if TaskPool has this id
+// Has returns if TaskPool has this id.
 func (tp *TaskPool) Has(id int64) bool {
 	if _, ok := tp.tp[id]; !ok {
 		return false
@@ -60,7 +60,7 @@ func (tp *TaskPool) Has(id int64) bool {
 	return true
 }
 
-// NewTask creates a *Task and stores it into TaskPool
+// NewTask creates a *Task and stores it into TaskPool.
 func (tp *TaskPool) NewTask() (*Task, error) {
 	for n := 0; n < 3; n++ {
 		task := newTask()
@@ -72,7 +72,7 @@ func (tp *TaskPool) NewTask() (*Task, error) {
 	return nil, ErrDupTaskID
 }
 
-// NewSubTask creates a sub *Task and stores it into TaskPool
+// NewSubTask creates a sub *Task and stores it into TaskPool.
 func (tp *TaskPool) NewSubTask(task *Task) (*Task, error) {
 	if !tp.Has(task.ID) {
 		return nil, ErrTaskNotFound
@@ -90,7 +90,7 @@ func (tp *TaskPool) NewSubTask(task *Task) (*Task, error) {
 	return nil, ErrDupTaskID
 }
 
-// Delete removes a *Task from TaskPool and its parent's SubTasks, then recursively deletes its subtasks
+// Delete removes a *Task from TaskPool and its parent's SubTasks, then recursively deletes its subtasks.
 func (tp *TaskPool) Delete(task *Task) error {
 	if !tp.Has(task.ID) {
 		return ErrTaskNotFound
@@ -109,10 +109,10 @@ func (tp *TaskPool) Delete(task *Task) error {
 	return nil
 }
 
-// FindFunc is used by Find to find Task
+// FindFunc is used by Find to find Task.
 type FindFunc func(*Task) bool
 
-// Find finds a corresponding Task
+// Find finds a corresponding Task.
 func (tp *TaskPool) Find(f FindFunc) (*Task, error) {
 	for _, i := range tp.tp {
 		if f(i) {
@@ -122,7 +122,7 @@ func (tp *TaskPool) Find(f FindFunc) (*Task, error) {
 	return nil, ErrTaskNotFound
 }
 
-// FindAll finds all corresponding Task
+// FindAll finds all corresponding Task.
 func (tp *TaskPool) FindAll(f FindFunc) ([]*Task, error) {
 	tasks := []*Task{}
 	for _, i := range tp.tp {

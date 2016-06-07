@@ -1,6 +1,6 @@
 package gtd
 
-// Task represents a task
+// Task represents a task.
 type Task struct {
 	ID    int64
 	Start int64
@@ -16,12 +16,12 @@ type Task struct {
 	SubTasks   []*Task
 }
 
-// AddSubTask appends *Task to SubTasks
+// AddSubTask appends *Task to SubTasks.
 func (task *Task) AddSubTask(subTask *Task) {
 	task.SubTasks = append(task.SubTasks, subTask)
 }
 
-// DeleteSubTask deletes *Task from SubTasks
+// DeleteSubTask deletes *Task from SubTasks.
 func (task *Task) DeleteSubTask(subTask *Task) {
 	for n, i := range task.SubTasks {
 		if i == subTask {

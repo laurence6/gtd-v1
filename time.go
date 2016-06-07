@@ -8,34 +8,34 @@ const (
 	TimeLayout = "15:04"
 )
 
-// Time is a unix timestamp
+// Time is a unix timestamp.
 type Time struct {
 	sec  int64
 	date string
 	time string
 }
 
-// Get returns the unix timestamp
+// Get returns the unix timestamp.
 func (t *Time) Get() int64 {
 	return t.sec
 }
 
-// EqualZero returns if Time == 0
+// EqualZero returns if Time == 0.
 func (t *Time) EqualZero() bool {
 	return t.sec == 0
 }
 
-// Date returns string of the date
+// Date returns string of the date.
 func (t *Time) Date() string {
 	return t.date
 }
 
-// Time returns string of the time
+// Time returns string of the time.
 func (t *Time) Time() string {
 	return t.time
 }
 
-// Set sets the Time.sec
+// Set sets Time.sec.
 func (t *Time) Set(sec int64) {
 	t.sec = sec
 	if t.sec != 0 {
@@ -49,7 +49,7 @@ func (t *Time) Set(sec int64) {
 	return
 }
 
-// ParseDateTimeInLocation parses date & time string
+// ParseDateTimeInLocation parses date & time string and sets Time.sec. If date is empty, Time.sec = 0. If date is not empty and time is empty, only date will be parsed.
 func (t *Time) ParseDateTimeInLocation(dateStr, timeStr string, location *time.Location) error {
 	if dateStr != "" {
 		var datetime time.Time

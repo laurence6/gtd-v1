@@ -13,7 +13,7 @@ type marshalTask struct {
 	SubTasks   []int64
 }
 
-// Marshal serializes Task to a json object and writes to Writer
+// Marshal serializes Task to a json object and writes to Writer.
 func (task *Task) Marshal(w io.Writer) error {
 	mt := marshalTask{}
 	mt.Task = *task
@@ -42,7 +42,7 @@ func (task *Task) Marshal(w io.Writer) error {
 	return nil
 }
 
-// Marshal serializes TaskPool to json objects and writes to Writer
+// Marshal serializes TaskPool to json objects and writes to Writer.
 func (tp *TaskPool) Marshal(w io.Writer) error {
 	for _, i := range tp.tp {
 		if i.ParentTask == nil {
@@ -55,7 +55,7 @@ func (tp *TaskPool) Marshal(w io.Writer) error {
 	return nil
 }
 
-// UnmarshalTaskPool reads json objects from Reader and deserializes them to a TaskPool
+// UnmarshalTaskPool reads json objects from Reader and deserializes them to a TaskPool.
 func UnmarshalTaskPool(r io.Reader) (*TaskPool, error) {
 	tp := NewTaskPool()
 	decoder := json.NewDecoder(r)
@@ -76,12 +76,12 @@ func UnmarshalTaskPool(r io.Reader) (*TaskPool, error) {
 	return tp, nil
 }
 
-// MarshalJSON marshals time to json
+// MarshalJSON marshals Time to json.
 func (t *Time) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.FormatInt(t.sec, 10)), nil
 }
 
-// UnmarshalJSON unmarshals json to time
+// UnmarshalJSON unmarshals json to Time.
 func (t *Time) UnmarshalJSON(b []byte) error {
 	sec, err := strconv.ParseInt(string(b), 10, 64)
 	if err != nil {

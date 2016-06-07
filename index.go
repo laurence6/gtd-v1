@@ -56,13 +56,13 @@ func (bp byPriority) Less(i, j int) bool {
 	}
 }
 
-// SortByDue sorts []*Task by Due
+// SortByDue sorts []*Task by Due.
 func SortByDue(taskList []*Task) {
 	bd := byDue{taskList}
 	sort.Sort(bd)
 }
 
-// SortByDefault sorts []*Task by default algorithm
+// SortByDefault sorts []*Task by default algorithm.
 // ----------------------------
 // 0 |Over due      |By Due
 // ----------------------------
