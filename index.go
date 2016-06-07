@@ -34,6 +34,8 @@ func (bd byDue) Less(i, j int) bool {
 		return earlier(a.Due, b.Due)
 	case a.Priority != b.Priority:
 		return a.Priority < b.Priority
+	case a.Start != b.Start:
+		return a.Start < b.Start
 	default:
 		return a.ID < b.ID
 	}
@@ -53,6 +55,8 @@ func (bn byNotification) Less(i, j int) bool {
 		return earlier(a.Due, b.Due)
 	case a.Priority != b.Priority:
 		return a.Priority < b.Priority
+	case a.Start != b.Start:
+		return a.Start < b.Start
 	default:
 		return a.ID < b.ID
 	}
@@ -70,6 +74,8 @@ func (bp byPriority) Less(i, j int) bool {
 		return a.Priority < b.Priority
 	case a.Due.sec != b.Due.sec:
 		return earlier(a.Due, b.Due)
+	case a.Start != b.Start:
+		return a.Start < b.Start
 	default:
 		return a.ID < b.ID
 	}
