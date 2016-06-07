@@ -127,13 +127,13 @@ func addSub(r *http.Request) *responseJSON {
 		return response
 	}
 	if id != 0 {
-		tp.RLock()
+		rw.RLock()
 		task := tp.Get(id)
-		tp.RUnlock()
+		rw.RUnlock()
 		if task != nil {
-			tp.Lock()
+			rw.Lock()
 			subTask, err := tp.NewSubTask(task)
-			tp.Unlock()
+			rw.Unlock()
 			tp.Changed()
 			if err != nil {
 				log.Println(err.Error())
@@ -159,9 +159,9 @@ func edit(r *http.Request) *responseJSON {
 	}
 	b := &bytes.Buffer{}
 	if id != 0 {
-		tp.RLock()
+		rw.RLock()
 		task := tp.Get(id)
-		tp.RUnlock()
+		rw.RUnlock()
 		if task != nil {
 			_ = t.ExecuteTemplate(b, "form", "")
 			err = t.ExecuteTemplate(b, "parentsubtask", task)
@@ -194,18 +194,18 @@ func updateTask(r *http.Request) *responseJSON {
 		return response
 	}
 	if id == 0 {
-		tp.Lock()
+		rw.Lock()
 		task, err := tp.NewTask()
-		tp.Unlock()
+		rw.Unlock()
 		if err != nil {
 			log.Println(err.Error())
 			jsonOops(response, err.Error())
 			tp.Delete(task)
 			return response
 		}
-		tp.Lock()
+		rw.Lock()
 		err = updateTaskFromForm(task, r.PostForm)
-		tp.Unlock()
+		rw.Unlock()
 		if err != nil {
 			log.Println(err.Error())
 			jsonOops(response, err.Error())
@@ -216,13 +216,13 @@ func updateTask(r *http.Request) *responseJSON {
 		jsonRedirect(response, "/index")
 		return response
 	}
-	tp.RLock()
+	rw.RLock()
 	task := tp.Get(id)
-	tp.RUnlock()
+	rw.RUnlock()
 	if task != nil {
-		tp.Lock()
+		rw.Lock()
 		err := updateTaskFromForm(task, r.PostForm)
-		tp.Unlock()
+		rw.Unlock()
 		if err != nil {
 			log.Println(err.Error())
 			jsonOops(response, err.Error())

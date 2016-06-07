@@ -115,14 +115,14 @@ func notify(taskList []*gtd.Task) {
 }
 
 func rebuildNotificationIndex() {
-	tp.RLock()
+	rw.RLock()
 	taskList, _ := tp.FindAll(func(task *gtd.Task) bool {
 		if !task.Notification.EqualZero() {
 			return true
 		}
 		return false
 	})
-	tp.RUnlock()
+	rw.RUnlock()
 	notificationIndex = notificationIndex[:0]
 	now := time.Now().Unix()
 	gtd.SortByNotification(taskList)
