@@ -99,16 +99,16 @@ func (tp *TaskPool) Delete(task *Task) error {
 	if !tp.Has(task.ID) {
 		return ErrTaskNotFound
 	}
-	delete(tp.tp, task.ID)
-	if task.ParentTask != nil {
-		task.ParentTask.DeleteSubTask(task)
-		task.ParentTask = nil
-	}
 	for n := len(task.SubTasks); n > 0; n-- {
 		err := tp.Delete(task.SubTasks[0])
 		if err != nil {
 			return err
 		}
+	}
+	delete(tp.tp, task.ID)
+	if task.ParentTask != nil {
+		task.ParentTask.DeleteSubTask(task)
+		task.ParentTask = nil
 	}
 	return nil
 }
