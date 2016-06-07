@@ -123,7 +123,10 @@ func addSub(r *http.Request) *responseJSON {
 		return response
 	}
 	if id != 0 {
-		if task := tp.Get(id); task != nil {
+		tp.RLock()
+		task := tp.Get(id)
+		tp.RUnlock()
+		if task != nil {
 			tp.Lock()
 			subTask, err := tp.NewSubTask(task)
 			tp.Unlock()
@@ -152,7 +155,10 @@ func edit(r *http.Request) *responseJSON {
 	}
 	b := &bytes.Buffer{}
 	if id != 0 {
-		if task := tp.Get(id); task != nil {
+		tp.RLock()
+		task := tp.Get(id)
+		tp.RUnlock()
+		if task != nil {
 			_ = t.ExecuteTemplate(b, "form", "")
 			err = t.ExecuteTemplate(b, "parentsubtask", task)
 			if err != nil {
@@ -184,41 +190,34 @@ func updateTask(r *http.Request) *responseJSON {
 			oops(response, err.Error())
 			return response
 		}
-		if id == 0 {
-			tp.Lock()
-			task, err := tp.NewTask()
-			tp.Unlock()
-			if err != nil {
-				log.Println(err.Error())
-				oops(response, err.Error())
-				tp.Delete(task)
-				return response
-			}
-			tp.Lock()
-			err = updateTaskFromForm(task, r.PostForm)
-			tp.Unlock()
-			if err != nil {
-				log.Println(err.Error())
-				oops(response, err.Error())
-				tp.Delete(task)
-				return response
-			}
-			tp.Changed()
-			redirect(response, "index")
-			return response
-		} else if task := tp.Get(id); task != nil {
-			tp.Lock()
-			err := updateTaskFromForm(task, r.PostForm)
-			tp.Unlock()
-			if err != nil {
-				log.Println(err.Error())
-				oops(response, err.Error())
-				return response
-			}
-			tp.Changed()
-			redirect(response, "index")
+		tp.Lock()
+		err = updateTaskFromForm(task, r.PostForm)
+		tp.Unlock()
+		if err != nil {
+			log.Println(err.Error())
+			oops(response, err.Error())
+			tp.Delete(task)
 			return response
 		}
+		tp.Changed()
+		redirect(response, "index")
+		return response
+	}
+	tp.RLock()
+	task := tp.Get(id)
+	tp.RUnlock()
+	if task != nil {
+		tp.Lock()
+		err := updateTaskFromForm(task, r.PostForm)
+		tp.Unlock()
+		if err != nil {
+			log.Println(err.Error())
+			oops(response, err.Error())
+			return response
+		}
+		tp.Changed()
+		redirect(response, "index")
+		return response
 	}
 	oops(response, errInvalid.Error())
 	return response
@@ -234,7 +233,10 @@ func deleteTask(r *http.Request) *responseJSON {
 		return response
 	}
 	if id != 0 {
-		if task := tp.Get(id); task != nil {
+		tp.RLock()
+		task := tp.Get(id)
+		tp.RUnlock()
+		if task != nil {
 			tp.Lock()
 			err := tp.Delete(task)
 			tp.Unlock()
