@@ -28,11 +28,15 @@ func newTask() *Task {
 // TaskPool contains many *Task, using Task.ID as key.
 type TaskPool struct {
 	tp map[int64]*Task
+	hooks []func()
 }
 
 // NewTaskPool returns a *TaskPool.
 func NewTaskPool() *TaskPool {
-	return &TaskPool{map[int64]*Task{}}
+	return &TaskPool{
+		map[int64]*Task{},
+		[]func(){},
+	}
 }
 
 // Get returns a *Task using id as key.
@@ -134,4 +138,18 @@ func (tp *TaskPool) FindAll(f FindFunc) ([]*Task, error) {
 		return tasks, nil
 	}
 	return nil, ErrTaskNotFound
+}
+
+// HookFunc adds hook function.
+func (tp *TaskPool) HookFunc(f func()) {
+	tp.hooks = append(tp.hooks, f)
+}
+
+// Changed is called when TaskPool or Task in it is changed. It calls hook functions one by one in another go routine.
+func (tp *TaskPool) Changed() {
+	go func() {
+		for _, f := range tp.hooks {
+			f()
+		}
+	}()
 }
