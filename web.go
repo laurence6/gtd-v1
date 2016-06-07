@@ -41,13 +41,13 @@ func init() {
 
 func web() {
 	http.HandleFunc("/", landing)
-	http.HandleFunc("/index", handlerFuncWrapper(index))
-	http.HandleFunc("/add", handlerFuncWrapper(addTask))
-	http.HandleFunc("/addSub", handlerFuncWrapper(addSubTask))
-	http.HandleFunc("/edit", handlerFuncWrapper(editTask))
-	http.HandleFunc("/done", handlerFuncWrapper(doneTask))
-	http.HandleFunc("/delete", handlerFuncWrapper(deleteTask))
-	http.HandleFunc("/update", handlerFuncWrapper(updateTask))
+	http.HandleFunc("/index", jsonHandlerWrapper(index))
+	http.HandleFunc("/add", jsonHandlerWrapper(addTask))
+	http.HandleFunc("/addSub", jsonHandlerWrapper(addSubTask))
+	http.HandleFunc("/edit", jsonHandlerWrapper(editTask))
+	http.HandleFunc("/done", jsonHandlerWrapper(doneTask))
+	http.HandleFunc("/delete", jsonHandlerWrapper(deleteTask))
+	http.HandleFunc("/update", jsonHandlerWrapper(updateTask))
 
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
@@ -75,7 +75,7 @@ func newResponseJSON() *responseJSON {
 	return &responseJSON{200, ""}
 }
 
-func handlerFuncWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
+func jsonHandlerWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			httpError(w, 405, "POST")
@@ -123,9 +123,7 @@ func addSubTask(r *http.Request) *responseJSON {
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
+		goto LogJsonErrRet
 	}
 	if id != 0 {
 		rw.RLock()
@@ -137,9 +135,7 @@ func addSubTask(r *http.Request) *responseJSON {
 			rw.Unlock()
 			tp.Changed()
 			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
+				goto LogJsonErrRet
 			}
 			jsonRedirect(response, "/edit?ID="+strconv.FormatInt(subTask.ID, 10))
 			return response
@@ -147,18 +143,21 @@ func addSubTask(r *http.Request) *responseJSON {
 	}
 	jsonRedirect(response, "/add")
 	return response
+
+LogJsonErrRet:
+	log.Println(err.Error())
+	jsonError(response, err.Error())
+	return response
 }
 
 func editTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
+	b := &bytes.Buffer{}
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
+		goto LogJsonErrRet
 	}
-	b := &bytes.Buffer{}
 	if id != 0 {
 		rw.RLock()
 		task := tp.Get(id)
@@ -167,21 +166,22 @@ func editTask(r *http.Request) *responseJSON {
 			_ = t.ExecuteTemplate(b, "form", "")
 			err = t.ExecuteTemplate(b, "parentsubtask", task)
 			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
+				goto LogJsonErrRet
 			}
 			err = t.ExecuteTemplate(b, "edit", task)
 			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
+				goto LogJsonErrRet
 			}
 			response.Content = b.String()
 			return response
 		}
 	}
 	jsonRedirect(response, "/add")
+	return response
+
+LogJsonErrRet:
+	log.Println(err.Error())
+	jsonError(response, err.Error())
 	return response
 }
 
@@ -190,9 +190,7 @@ func doneTask(r *http.Request) *responseJSON {
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
+		goto LogJsonErrRet
 	}
 	if id != 0 {
 		rw.RLock()
@@ -203,9 +201,7 @@ func doneTask(r *http.Request) *responseJSON {
 			err := tp.Done(task)
 			rw.Unlock()
 			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
+				goto LogJsonErrRet
 			}
 			tp.Changed()
 			jsonRedirect(response, "/index")
@@ -214,6 +210,11 @@ func doneTask(r *http.Request) *responseJSON {
 	}
 	jsonError(response, errInvalid.Error())
 	return response
+
+LogJsonErrRet:
+	log.Println(err.Error())
+	jsonError(response, err.Error())
+	return response
 }
 
 func deleteTask(r *http.Request) *responseJSON {
@@ -221,9 +222,7 @@ func deleteTask(r *http.Request) *responseJSON {
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
+		goto LogJsonErrRet
 	}
 	if id != 0 {
 		rw.RLock()
@@ -234,9 +233,7 @@ func deleteTask(r *http.Request) *responseJSON {
 			err := tp.Delete(task)
 			rw.Unlock()
 			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
+				goto LogJsonErrRet
 			}
 			tp.Changed()
 			jsonRedirect(response, "/index")
@@ -245,57 +242,60 @@ func deleteTask(r *http.Request) *responseJSON {
 	}
 	jsonError(response, errInvalid.Error())
 	return response
+
+LogJsonErrRet:
+	log.Println(err.Error())
+	jsonError(response, err.Error())
+	return response
 }
 
 func updateTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
+	var task *gtd.Task
 	r.ParseForm()
 	id, err := stoI64(r.PostForm.Get("ID"))
 	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
+		goto LogJsonErrRet
 	}
 	if id == 0 {
 		rw.Lock()
-		task, err := tp.NewTask()
+		task, err = tp.NewTask()
 		rw.Unlock()
 		if err != nil {
-			log.Println(err.Error())
-			jsonError(response, err.Error())
 			tp.Delete(task)
-			return response
+			goto LogJsonErrRet
 		}
 		rw.Lock()
 		err = updateTaskFromForm(task, r.PostForm)
 		rw.Unlock()
 		if err != nil {
-			log.Println(err.Error())
-			jsonError(response, err.Error())
 			tp.Delete(task)
-			return response
+			goto LogJsonErrRet
 		}
 		tp.Changed()
 		jsonRedirect(response, "/index")
 		return response
 	}
 	rw.RLock()
-	task := tp.Get(id)
+	task = tp.Get(id)
 	rw.RUnlock()
 	if task != nil {
 		rw.Lock()
 		err := updateTaskFromForm(task, r.PostForm)
 		rw.Unlock()
 		if err != nil {
-			log.Println(err.Error())
-			jsonError(response, err.Error())
-			return response
+			goto LogJsonErrRet
 		}
 		tp.Changed()
 		jsonRedirect(response, "/index")
 		return response
 	}
 	jsonError(response, errInvalid.Error())
+	return response
+
+LogJsonErrRet:
+	log.Println(err.Error())
+	jsonError(response, err.Error())
 	return response
 }
 
