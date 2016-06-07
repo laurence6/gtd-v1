@@ -57,9 +57,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "", 404)
 		return
 	}
-	taskList := tp.GetAll()
-	gtd.SortByDefault(taskList)
-	err := t.ExecuteTemplate(w, "index", taskList)
+	err := t.ExecuteTemplate(w, "index", defaultIndex)
 	if err != nil {
 		log.Println(err.Error())
 		oops(w, r, err)
@@ -84,11 +82,12 @@ func addSub(w http.ResponseWriter, r *http.Request) {
 	}
 	if id != 0 {
 		if task := tp.Get(id); task != nil {
+			tp.Lock()
 			subTask, err := tp.NewSubTask(task)
+			tp.Unlock()
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
-				tp.Delete(subTask)
 				return
 			}
 			http.Redirect(w, r, "edit?ID="+strconv.FormatInt(subTask.ID, 10), 302)
@@ -137,29 +136,36 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if id == 0 {
+			tp.Lock()
 			task, err := tp.NewTask()
+			tp.Unlock()
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
 				return
 			}
+			tp.Lock()
 			err = updateTaskFromForm(task, r.PostForm)
+			tp.Unlock()
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
-				tp.Delete(task)
 				return
 			}
 			http.Redirect(w, r, "", 302)
+			tp.Changed()
 			return
 		} else if task := tp.Get(id); task != nil {
+			tp.Lock()
 			err := updateTaskFromForm(task, r.PostForm)
+			tp.Unlock()
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
 				return
 			}
 			http.Redirect(w, r, "", 302)
+			tp.Changed()
 			return
 		}
 	}
@@ -176,13 +182,16 @@ func deleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 	if id != 0 {
 		if task := tp.Get(id); task != nil {
+			tp.Lock()
 			err := tp.Delete(task)
+			tp.Unlock()
 			if err != nil {
 				log.Println(err.Error())
 				oops(w, r, err)
 				return
 			}
 			http.Redirect(w, r, "", 302)
+			tp.Changed()
 			return
 		}
 	}
@@ -245,5 +254,6 @@ func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 	}
 
 	task.Note = form.Get("Note")
+
 	return nil
 }
