@@ -39,31 +39,6 @@ func NewTaskPool() *TaskPool {
 	}
 }
 
-// Get returns a *Task using id as key.
-func (tp *TaskPool) Get(id int64) *Task {
-	if !tp.Has(id) {
-		return nil
-	}
-	return tp.tp[id]
-}
-
-// GetAll returns all *Task in TaskPool.
-func (tp *TaskPool) GetAll() []*Task {
-	taskList := []*Task{}
-	for _, i := range tp.tp {
-		taskList = append(taskList, i)
-	}
-	return taskList
-}
-
-// Has returns if TaskPool has this id.
-func (tp *TaskPool) Has(id int64) bool {
-	if _, ok := tp.tp[id]; ok {
-		return true
-	}
-	return false
-}
-
 // NewTask creates a *Task and stores it into TaskPool.
 func (tp *TaskPool) NewTask() (*Task, error) {
 	for n := 0; n < 3; n++ {
@@ -92,6 +67,31 @@ func (tp *TaskPool) NewSubTask(task *Task) (*Task, error) {
 		}
 	}
 	return nil, ErrDupTaskID
+}
+
+// Get returns a *Task using id as key.
+func (tp *TaskPool) Get(id int64) *Task {
+	if !tp.Has(id) {
+		return nil
+	}
+	return tp.tp[id]
+}
+
+// GetAll returns all *Task in TaskPool.
+func (tp *TaskPool) GetAll() []*Task {
+	taskList := []*Task{}
+	for _, i := range tp.tp {
+		taskList = append(taskList, i)
+	}
+	return taskList
+}
+
+// Has returns if TaskPool has this id.
+func (tp *TaskPool) Has(id int64) bool {
+	if _, ok := tp.tp[id]; ok {
+		return true
+	}
+	return false
 }
 
 // Delete removes a *Task from TaskPool and its parent's SubTasks, then recursively deletes its subtasks.
