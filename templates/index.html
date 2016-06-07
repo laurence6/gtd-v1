@@ -1,33 +1,51 @@
 {{define "index"}}
 <ul class="col-xs-12 col-sm-7 list-group">
-  <a type="button" href="#add" class="btn btn-default">Add</a>
   {{range .}}
-  <a href="javascript:void(0)" onclick="$(this).next().slideToggle(200);" class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
-    <h4 class="text-nowrap">
-      <span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}
-      <span class="pull-right">{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</span>
-    </h4>
-  </a>
-  <li class="row list-group-item" style="display:none;">
-    <a href="#edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
-    <a href="#delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
-    {{if .SubTasks}}
-    <ul class="col-xs-12 col-sm-12 list-group">
-      {{range .SubTasks}}
-      <li class="row list-group-item {{if eq .Priority 1}}list-group-item-danger{{end}}">
-        <p class="text-nowrap">
-          <span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}
-          <span class="pull-right">{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</span>
-        </p>
-      </li>
-      <li class="row list-group-item">
-        <a href="#edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
-        <a href="#delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
-      </li>
+  <div class="box box-solid {{if eq .Priority 1}}box-danger{{else}}box-default{{end}} collapsed-box">
+    <div class="box-header with-border">
+      <h4 class="box-title"><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</h4>
+      <div class="box-tools pull-right">
+        <span>{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</span>
+        <span><button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i></button></span>
+      </div>
+    </div>
+
+    {{if or .Note .SubTasks}}
+    <div class="box-body">
+      {{if .Note}}
+      <pre>{{.Note}}</pre>
       {{end}}
-    </ul>
+      {{if .SubTasks}}
+      <ul class="list-group">
+        {{range .SubTasks}}
+        <div class="box box-solid {{if eq .Priority 1}}box-danger{{else}}box-default{{end}}">
+          <div class="box-header with-border">
+            <p class="box-title"><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.Subject}}</p>
+            <div class="pull-right">
+              <span>{{if not .Due.EqualZero}}{{.Due.Date}} {{.Due.Time}}{{else}}No Due{{end}}</span>
+            </div>
+          </div>
+          {{if or .Note}}
+          <div class="box-body">
+            <pre>{{.Note}}</pre>
+          </div>
+          {{end}}
+          <div class="box-footer row">
+            <a href="#edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
+            <a href="#delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
+          </div>
+        </div>
+        {{end}}
+      </ul>
+      {{end}}
+    </div>
     {{end}}
-  </li>
+
+    <div class="box-footer row">
+      <a href="#edit?ID={{.ID}}" class="col-xs-6 col-sm-3">Edit</a>
+      <a href="#delete?ID={{.ID}}" class="col-xs-6 col-sm-3 text-danger">Delete</a>
+    </div>
+  </div>
   {{end}}
 </ul>
 {{end}}

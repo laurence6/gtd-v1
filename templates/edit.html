@@ -2,26 +2,33 @@
 <script>
 $(function() {
     $("input[name='ID']").val("{{.ID}}");
-    $("input[name='Subject']").val("{{.Subject}}");
+
+    $("input[name='Subject']").val("{{js .Subject}}");
+
     {{if .Due.EqualZero}}
     $("input[name='NoDue']").prop("checked", true);
     {{else}}
     $("input[name='DueDate']").val("{{.Due.Date}}");
     $("input[name='DueTime']").val("{{.Due.Time}}");
     {{end}}
+
     $("input[name='Priority'][value='{{.Priority}}']").parent().button('toggle');
+
     {{if not .Next.EqualZero}}
     $("input[name='Next']").prop("checked", true);
     $("input[name='NextDate']").val("{{.Next.Date}}");
     $("input[name='NextTime']").val("{{.Next.Time}}");
     {{end}}
+
     {{if .Notification.EqualZero}}
     $("input[name='NoNotification']").prop("checked", true);
     {{else}}
     $("input[name='NotificationDate']").val("{{.Notification.Date}}");
     $("input[name='NotificationTime']").val("{{.Notification.Time}}");
     {{end}}
-    $("textarea[name='Note']").val("{{.Note}}");
+
+    $("textarea[name='Note']").val("{{js .Note}}");
+
     $("#Delete").removeClass("hidden");
     $("#Delete").attr("href", "#delete?ID={{.ID}}");
 });
