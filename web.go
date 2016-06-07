@@ -58,7 +58,7 @@ func web() {
 
 func landing(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.Redirect(w, r, "/", 404)
+		http.Redirect(w, r, "/", 302)
 		return
 	}
 	t.ExecuteTemplate(w, "default", "")
@@ -70,7 +70,7 @@ type responseJSON struct {
 }
 
 func newResponseJSON() *responseJSON {
-	return &responseJSON{}
+	return &responseJSON{200, ""}
 }
 
 func jsonWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
@@ -88,7 +88,7 @@ func jsonWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
 }
 
 func index(r *http.Request) *responseJSON {
-	response := &responseJSON{200, ""}
+	response := newResponseJSON()
 	b := &bytes.Buffer{}
 	err := t.ExecuteTemplate(b, "index", defaultIndex)
 	if err != nil {
@@ -101,7 +101,7 @@ func index(r *http.Request) *responseJSON {
 }
 
 func add(r *http.Request) *responseJSON {
-	response := &responseJSON{200, ""}
+	response := newResponseJSON()
 	b := &bytes.Buffer{}
 	err := t.ExecuteTemplate(b, "form", "")
 	if err != nil {
@@ -114,7 +114,7 @@ func add(r *http.Request) *responseJSON {
 }
 
 func addSub(r *http.Request) *responseJSON {
-	response := &responseJSON{200, ""}
+	response := newResponseJSON()
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
@@ -145,7 +145,7 @@ func addSub(r *http.Request) *responseJSON {
 }
 
 func edit(r *http.Request) *responseJSON {
-	response := &responseJSON{200, ""}
+	response := newResponseJSON()
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
@@ -181,13 +181,22 @@ func edit(r *http.Request) *responseJSON {
 }
 
 func updateTask(r *http.Request) *responseJSON {
-	response := &responseJSON{200, ""}
-	if r.Method == "POST" {
-		r.ParseForm()
-		id, err := stoI64(r.PostForm.Get("ID"))
+	response := newResponseJSON()
+	r.ParseForm()
+	id, err := stoI64(r.PostForm.Get("ID"))
+	if err != nil {
+		log.Println(err.Error())
+		oops(response, err.Error())
+		return response
+	}
+	if id == 0 {
+		tp.Lock()
+		task, err := tp.NewTask()
+		tp.Unlock()
 		if err != nil {
 			log.Println(err.Error())
 			oops(response, err.Error())
+			tp.Delete(task)
 			return response
 		}
 		tp.Lock()
@@ -224,7 +233,7 @@ func updateTask(r *http.Request) *responseJSON {
 }
 
 func deleteTask(r *http.Request) *responseJSON {
-	response := &responseJSON{200, ""}
+	response := newResponseJSON()
 	r.ParseForm()
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
