@@ -1,3 +1,12 @@
 ul .row {
     margin-left: 0;
+    margin-right: 0;
+}
+
+ul .box {
+    margin-bottom: 2px;
+}
+
+.box-body ul {
+    margin-bottom: 0;
 }

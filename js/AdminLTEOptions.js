@@ -8,7 +8,7 @@ var AdminLTEOptions = {
   //General animation speed for JS animated elements such as box collapse/expand and
   //sidebar treeview slide up/down. This options accepts an integer as milliseconds,
   //'fast', 'normal', or 'slow'
-  animationSpeed: 500,
+  animationSpeed: 0,
   //Sidebar push menu toggle button selector
   sidebarToggleSelector: "[data-toggle='offcanvas']",
   //Activate sidebar push menu
@@ -20,7 +20,7 @@ var AdminLTEOptions = {
   //are used together
   sidebarExpandOnHover: false,
   //BoxRefresh Plugin
-  enableBoxRefresh: true,
+  enableBoxRefresh: false,
   //Bootstrap.js tooltip
   enableBSToppltip: true,
   BSTooltipSelector: "[data-toggle='tooltip']",
@@ -62,7 +62,7 @@ var AdminLTEOptions = {
   //Direct Chat plugin options
   directChat: {
     //Enable direct chat by default
-    enable: true,
+    enable: false,
     //The button to open and close the chat contacts pane
     contactToggleSelector: '[data-widget="chat-pane-toggle"]'
   },
