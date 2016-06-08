@@ -335,7 +335,7 @@ func stoI64(str string) (int64, error) {
 	return i64, nil
 }
 
-// updateTaskFromForm updates Subject, Due, Priority, Next, Notification, Note fields
+// updateTaskFromForm updates Subject, Due, Priority, Notification, Next, Note fields.
 func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 	var err error
 	task.Subject = form.Get("Subject")
@@ -355,16 +355,6 @@ func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 		return err
 	}
 
-	next := form.Get("Next")
-	if next == "on" {
-		err := task.Next.ParseDateTimeInLocation(form.Get("NextDate"), form.Get("NextTime"), location)
-		if err != nil {
-			return err
-		}
-	} else {
-		task.Next.Set(0)
-	}
-
 	noNotification := form.Get("NoNotification")
 	if noNotification == "on" {
 		task.Notification.Set(0)
@@ -373,6 +363,16 @@ func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	next := form.Get("Next")
+	if next == "on" {
+		err := task.Next.ParseDateTimeInLocation(form.Get("NextDate"), form.Get("NextTime"), location)
+		if err != nil {
+			return err
+		}
+	} else {
+		task.Next.Set(0)
 	}
 
 	task.Note = form.Get("Note")
