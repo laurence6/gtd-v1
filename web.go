@@ -126,13 +126,13 @@ func addSubTask(r *http.Request) *responseJSON {
 		goto LogJsonErrRet
 	}
 	if id != 0 {
-		rw.RLock()
+		tpRW.RLock()
 		task := tp.Get(id)
-		rw.RUnlock()
+		tpRW.RUnlock()
 		if task != nil {
-			rw.Lock()
+			tpRW.Lock()
 			subTask, err := tp.NewSubTask(task)
-			rw.Unlock()
+			tpRW.Unlock()
 			tp.Changed()
 			if err != nil {
 				goto LogJsonErrRet
@@ -159,9 +159,9 @@ func editTask(r *http.Request) *responseJSON {
 		goto LogJsonErrRet
 	}
 	if id != 0 {
-		rw.RLock()
+		tpRW.RLock()
 		task := tp.Get(id)
-		rw.RUnlock()
+		tpRW.RUnlock()
 		if task != nil {
 			_ = t.ExecuteTemplate(b, "form", "")
 			err = t.ExecuteTemplate(b, "parentsubtask", task)
@@ -193,13 +193,13 @@ func doneTask(r *http.Request) *responseJSON {
 		goto LogJsonErrRet
 	}
 	if id != 0 {
-		rw.RLock()
+		tpRW.RLock()
 		task := tp.Get(id)
-		rw.RUnlock()
+		tpRW.RUnlock()
 		if task != nil {
-			rw.Lock()
+			tpRW.Lock()
 			err := tp.Done(task)
-			rw.Unlock()
+			tpRW.Unlock()
 			if err != nil {
 				goto LogJsonErrRet
 			}
@@ -225,13 +225,13 @@ func deleteTask(r *http.Request) *responseJSON {
 		goto LogJsonErrRet
 	}
 	if id != 0 {
-		rw.RLock()
+		tpRW.RLock()
 		task := tp.Get(id)
-		rw.RUnlock()
+		tpRW.RUnlock()
 		if task != nil {
-			rw.Lock()
+			tpRW.Lock()
 			err := tp.Delete(task)
-			rw.Unlock()
+			tpRW.Unlock()
 			if err != nil {
 				goto LogJsonErrRet
 			}
@@ -258,16 +258,16 @@ func updateTask(r *http.Request) *responseJSON {
 		goto LogJsonErrRet
 	}
 	if id == 0 {
-		rw.Lock()
+		tpRW.Lock()
 		task, err = tp.NewTask()
-		rw.Unlock()
+		tpRW.Unlock()
 		if err != nil {
 			tp.Delete(task)
 			goto LogJsonErrRet
 		}
-		rw.Lock()
+		tpRW.Lock()
 		err = updateTaskFromForm(task, r.PostForm)
-		rw.Unlock()
+		tpRW.Unlock()
 		if err != nil {
 			tp.Delete(task)
 			goto LogJsonErrRet
@@ -276,13 +276,13 @@ func updateTask(r *http.Request) *responseJSON {
 		jsonRedirect(response, "/index")
 		return response
 	}
-	rw.RLock()
+	tpRW.RLock()
 	task = tp.Get(id)
-	rw.RUnlock()
+	tpRW.RUnlock()
 	if task != nil {
-		rw.Lock()
+		tpRW.Lock()
 		err := updateTaskFromForm(task, r.PostForm)
-		rw.Unlock()
+		tpRW.Unlock()
 		if err != nil {
 			goto LogJsonErrRet
 		}

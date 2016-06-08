@@ -11,7 +11,7 @@ import (
 )
 
 var tp *gtd.TaskPool
-var rw = &sync.RWMutex{}
+var tpRW = &sync.RWMutex{}
 
 var defaultIndex = []*gtd.Task{}
 
@@ -56,9 +56,9 @@ func init() {
 }
 
 func rebuildDefaultIndex() {
-	rw.RLock()
+	tpRW.RLock()
 	defaultIndex = tp.GetAll()
-	rw.RUnlock()
+	tpRW.RUnlock()
 	gtd.SortByDefault(defaultIndex)
 }
 
@@ -68,9 +68,9 @@ func backupTaskPool() {
 	if err != nil {
 		log.Println(err)
 	}
-	rw.RLock()
+	tpRW.RLock()
 	err = tp.Marshal(tpFile)
-	rw.RUnlock()
+	tpRW.RUnlock()
 	if err != nil {
 		log.Println(err)
 	}
