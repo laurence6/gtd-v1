@@ -13,16 +13,18 @@ type Notifier interface {
 }
 
 type notifiedList struct {
+	// Use time as key
 	m         map[int64][]int64
-	l         []int64
+	keys      []int64
 	maxlength int
 }
 
 func (n *notifiedList) Add(time, id int64) {
 	if _, ok := n.m[time]; !ok {
 		n.m[time] = []int64{}
-		n.l = append(n.l, time)
-		if len(n.l) > n.maxlength {
+		n.keys = append(n.keys, time)
+
+		if len(n.keys) > n.maxlength {
 			n.GC()
 		}
 	}
@@ -39,14 +41,15 @@ func (n *notifiedList) Has(time, id int64) bool {
 	return false
 }
 func (n *notifiedList) GC() {
-	exceed := len(n.l) - n.maxlength
+	exceed := len(n.keys) - n.maxlength
 	if exceed <= 0 {
 		return
 	}
+
 	for i := 0; i < exceed; i++ {
-		delete(n.m, n.l[i])
+		delete(n.m, n.keys[i])
 	}
-	n.l = n.l[exceed:]
+	n.keys = n.keys[exceed:]
 }
 
 var notifiers = []Notifier{}
@@ -56,7 +59,7 @@ var notificationIndex = []*gtd.Task{}
 var notified = &notifiedList{
 	map[int64][]int64{},
 	[]int64{},
-	30,
+	60,
 }
 
 func init() {
@@ -64,40 +67,45 @@ func init() {
 }
 
 func notification() {
+	rebuildNotificationIndex()
+
 	c := make(chan int)
 	tp.HookFunc(func() {
 		rebuildNotificationIndex()
 		c <- 1
 	})
-	rebuildNotificationIndex()
 
 	go func() {
 		for {
-			if len(notificationIndex) > 0 {
-				select {
-				// Start 1s before
-				case <-time.After(time.Duration((notificationIndex[0].Notification.Get() - time.Now().Unix() - 1) * 1e9)):
-					n0 := notificationIndex[0].Notification.Get()
-					taskList := []*gtd.Task{}
-					for n, i := range notificationIndex {
-						if n == 0 || (i.Notification.Get()-n0) < 60 {
-							if !notified.Has(i.Notification.Get(), i.ID) {
-								taskList = append(taskList, i)
-							}
-						} else {
-							break
+			if len(notificationIndex) == 0 {
+				<-c
+				continue
+			}
+
+			select {
+			// Start 1s before
+			case <-time.After(time.Duration((notificationIndex[0].Notification.Get() - time.Now().Unix() - 1) * 1e9)):
+				n0 := notificationIndex[0].Notification.Get()
+
+				taskList := []*gtd.Task{}
+				for n, i := range notificationIndex {
+					if n == 0 || (i.Notification.Get()-n0) < 60 {
+						if !notified.Has(i.Notification.Get(), i.ID) {
+							taskList = append(taskList, i)
 						}
+					} else {
+						break
 					}
-					go notify(taskList)
-					select {
-					case <-time.After(time.Duration((59 - (time.Now().Unix() - n0)) * 1e9)):
-					case <-c:
-					}
+				}
+				go notify(taskList)
+
+				select {
+				case <-time.After(time.Duration((n0 + 59 - time.Now().Unix()) * 1e9)):
 					rebuildNotificationIndex()
 				case <-c:
 				}
-			} else {
-				<-c
+
+			case <-c:
 			}
 		}
 	}()
@@ -123,16 +131,18 @@ func rebuildNotificationIndex() {
 		return false
 	})
 	tpRW.RUnlock()
+
 	notificationIndex = notificationIndex[:0]
+
 	now := time.Now().Unix()
-	gtd.SortByNotification(taskList)
 	for _, i := range taskList {
-		notification := i.Notification.Get()
-		if notification < now {
+		if i.Notification.Get() < now {
 			continue
 		}
 		notificationIndex = append(notificationIndex, i)
 	}
+
+	gtd.SortByNotification(notificationIndex)
 }
 
 type stdout struct {

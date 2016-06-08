@@ -76,25 +76,26 @@ func newResponseJSON() *responseJSON {
 }
 
 func jsonHandlerWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
-	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			httpError(w, 405, "POST")
 			return
 		}
-		response := f(r)
-		jsonObj, err := json.Marshal(response)
+
+		response, err := json.Marshal(f(r))
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return
 		}
-		w.Write(jsonObj)
+
+		w.Write(response)
 	}
-	return handlerFunc
 }
 
 func index(r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
+
 	err := t.ExecuteTemplate(b, "index", defaultIndex)
 	if err != nil {
 		log.Println(err.Error())
@@ -108,6 +109,7 @@ func index(r *http.Request) *responseJSON {
 func addTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
+
 	err := t.ExecuteTemplate(b, "form", "")
 	if err != nil {
 		log.Println(err.Error())
@@ -120,11 +122,14 @@ func addTask(r *http.Request) *responseJSON {
 
 func addSubTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
+
 	r.ParseForm()
+
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		goto LogJsonErrRet
 	}
+
 	if id != 0 {
 		tpRW.RLock()
 		task := tp.Get(id)
@@ -141,6 +146,7 @@ func addSubTask(r *http.Request) *responseJSON {
 			return response
 		}
 	}
+
 	jsonRedirect(response, "/add")
 	return response
 
@@ -153,11 +159,14 @@ LogJsonErrRet:
 func editTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
+
 	r.ParseForm()
+
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		goto LogJsonErrRet
 	}
+
 	if id != 0 {
 		tpRW.RLock()
 		task := tp.Get(id)
@@ -176,6 +185,7 @@ func editTask(r *http.Request) *responseJSON {
 			return response
 		}
 	}
+
 	jsonRedirect(response, "/add")
 	return response
 
@@ -187,11 +197,14 @@ LogJsonErrRet:
 
 func doneTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
+
 	r.ParseForm()
+
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		goto LogJsonErrRet
 	}
+
 	if id != 0 {
 		tpRW.RLock()
 		task := tp.Get(id)
@@ -208,6 +221,7 @@ func doneTask(r *http.Request) *responseJSON {
 			return response
 		}
 	}
+
 	jsonError(response, errInvalid.Error())
 	return response
 
@@ -219,11 +233,14 @@ LogJsonErrRet:
 
 func deleteTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
+
 	r.ParseForm()
+
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
 		goto LogJsonErrRet
 	}
+
 	if id != 0 {
 		tpRW.RLock()
 		task := tp.Get(id)
@@ -240,6 +257,7 @@ func deleteTask(r *http.Request) *responseJSON {
 			return response
 		}
 	}
+
 	jsonError(response, errInvalid.Error())
 	return response
 
@@ -252,11 +270,14 @@ LogJsonErrRet:
 func updateTask(r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	var task *gtd.Task
+
 	r.ParseForm()
+
 	id, err := stoI64(r.PostForm.Get("ID"))
 	if err != nil {
 		goto LogJsonErrRet
 	}
+
 	if id == 0 {
 		tpRW.Lock()
 		task, err = tp.NewTask()
@@ -276,6 +297,7 @@ func updateTask(r *http.Request) *responseJSON {
 		jsonRedirect(response, "/index")
 		return response
 	}
+
 	tpRW.RLock()
 	task = tp.Get(id)
 	tpRW.RUnlock()
@@ -290,6 +312,7 @@ func updateTask(r *http.Request) *responseJSON {
 		jsonRedirect(response, "/index")
 		return response
 	}
+
 	jsonError(response, errInvalid.Error())
 	return response
 

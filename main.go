@@ -59,6 +59,7 @@ func rebuildDefaultIndex() {
 	tpRW.RLock()
 	defaultIndex = tp.GetAll()
 	tpRW.RUnlock()
+
 	gtd.SortByDefault(defaultIndex)
 }
 
@@ -68,12 +69,14 @@ func backupTaskPool() {
 	if err != nil {
 		log.Println(err)
 	}
+
 	tpRW.RLock()
 	err = tp.Marshal(tpFile)
 	tpRW.RUnlock()
 	if err != nil {
 		log.Println(err)
 	}
+
 	tpFile.Close()
 }
 
@@ -81,8 +84,8 @@ func main() {
 	// When backup has better performence
 	//tp.HookFunc(backupTaskPool)
 
-	tp.HookFunc(rebuildDefaultIndex)
 	rebuildDefaultIndex()
+	tp.HookFunc(rebuildDefaultIndex)
 
 	log.Println("Start web server")
 	web()
