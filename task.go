@@ -8,8 +8,8 @@ type Task struct {
 	Subject      string
 	Due          *Time
 	Priority     int
-	Next         *Time
 	Notification *Time
+	Next         *Time
 	Note         string
 
 	ParentTask *Task

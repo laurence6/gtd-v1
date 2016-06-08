@@ -20,8 +20,8 @@ func newTask() *Task {
 	task.ID = id
 	task.Start = start
 	task.Due = &Time{}
-	task.Next = &Time{}
 	task.Notification = &Time{}
+	task.Next = &Time{}
 	return task
 }
 
@@ -113,7 +113,7 @@ func (tp *TaskPool) Delete(task *Task) error {
 	return nil
 }
 
-// Done deletes the task if task.Next == 0, or it add Due, Next, Notification by Next-Start and set Start = Next.
+// Done deletes the task if task.Next == 0, or it add Due, Notification, Next by Next-Start and set Start = Next.
 func (tp *TaskPool) Done(task *Task) error {
 	if !tp.Has(task.ID) {
 		return ErrTaskNotFound
