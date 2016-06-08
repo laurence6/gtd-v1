@@ -33,16 +33,16 @@ func init() {
 	}
 	log.Println(session)
 
+	tp = gtd.NewTaskPool()
 	tpFile, err := os.Open("taskpool")
 	if err == nil {
-		tp, err = gtd.UnmarshalTaskPool(tpFile)
+		err = tp.Unmarshal(tpFile)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		tpFile.Close()
 	} else {
 		log.Println(err)
-		tp = gtd.NewTaskPool()
 	}
 
 	c := make(chan os.Signal, 1)
