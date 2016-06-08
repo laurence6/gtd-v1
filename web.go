@@ -307,7 +307,10 @@ var httpErrorMessage = map[int]string{
 
 func httpError(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
-	codeMessage := httpErrorMessage[code]
+	codeMessage, ok := httpErrorMessage[code]
+	if !ok {
+		codeMessage = strconv.Itoa(code)
+	}
 	fmt.Fprintf(w, "<html><body><center><h1>%s</h1></center><p>%s</p></body></html>", codeMessage, message)
 }
 
