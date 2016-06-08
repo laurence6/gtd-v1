@@ -66,6 +66,7 @@ func (tp *TaskPool) NewSubTask(task *Task) (*Task, error) {
 			return subTask, nil
 		}
 	}
+
 	return nil, ErrDupTaskID
 }
 
@@ -99,17 +100,20 @@ func (tp *TaskPool) Delete(task *Task) error {
 	if !tp.Has(task.ID) {
 		return ErrTaskNotFound
 	}
+
 	for n := len(task.SubTasks); n > 0; n-- {
 		err := tp.Delete(task.SubTasks[0])
 		if err != nil {
 			return err
 		}
 	}
+
 	delete(tp.tp, task.ID)
 	if task.ParentTask != nil {
 		task.ParentTask.DeleteSubTask(task)
 		task.ParentTask = nil
 	}
+
 	return nil
 }
 
@@ -118,15 +122,18 @@ func (tp *TaskPool) Done(task *Task) error {
 	if !tp.Has(task.ID) {
 		return ErrTaskNotFound
 	}
+
 	if task.Next.EqualZero() {
 		return tp.Delete(task)
 	}
+
 	for n := len(task.SubTasks); n > 0; n-- {
 		err := tp.Done(task.SubTasks[0])
 		if err != nil {
 			return err
 		}
 	}
+
 	delta := task.Next.Get()/86400*86400 - task.Start/86400*86400
 	task.Start = task.Next.Get()
 	if !task.Due.EqualZero() {
@@ -136,6 +143,7 @@ func (tp *TaskPool) Done(task *Task) error {
 		task.Notification.Set(task.Notification.Get() + delta)
 	}
 	task.Next.Set(task.Next.Get() + delta)
+
 	return nil
 }
 
@@ -155,14 +163,17 @@ func (tp *TaskPool) Find(f FindFunc) (*Task, error) {
 // FindAll finds all corresponding Task.
 func (tp *TaskPool) FindAll(f FindFunc) ([]*Task, error) {
 	tasks := []*Task{}
+
 	for _, i := range tp.tp {
 		if f(i) {
 			tasks = append(tasks, i)
 		}
 	}
+
 	if len(tasks) > 0 {
 		return tasks, nil
 	}
+
 	return nil, ErrTaskNotFound
 }
 

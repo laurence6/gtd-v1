@@ -106,6 +106,7 @@ func SortByNotification(taskList []*Task) {
 func SortByDefault(taskList []*Task) {
 	lists := [][]*Task{[]*Task{}, []*Task{}, []*Task{}}
 	now := time.Now().Unix()
+
 	for _, i := range taskList {
 		switch {
 		case i.Due.sec-now < 0:
@@ -118,6 +119,7 @@ func SortByDefault(taskList []*Task) {
 			lists[2] = append(lists[2], i)
 		}
 	}
+
 	n := 0
 	for _, l := range lists {
 		SortByDue(l)

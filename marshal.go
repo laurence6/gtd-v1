@@ -24,6 +24,7 @@ func (tp *TaskPool) Unmarshal(r io.Reader) error {
 	decoder := json.NewDecoder(r)
 	for {
 		mt := marshalTask{}
+
 		err := decoder.Decode(&mt)
 		if err != nil {
 			if err == io.EOF {
@@ -32,11 +33,13 @@ func (tp *TaskPool) Unmarshal(r io.Reader) error {
 				return err
 			}
 		}
+
 		task := mt.Task
 		if mt.ParentTask != 0 {
 			task.ParentTask = tp.Get(mt.ParentTask)
 			task.ParentTask.AddSubTask(&task)
 		}
+
 		tp.tp[task.ID] = &task
 	}
 	return nil
@@ -52,6 +55,7 @@ type marshalTask struct {
 func (task *Task) marshalJSON(w io.Writer) error {
 	mt := marshalTask{}
 	mt.Task = *task
+
 	if task.ParentTask != nil {
 		mt.ParentTask = task.ParentTask.ID
 	}
@@ -73,6 +77,7 @@ func (task *Task) marshalJSON(w io.Writer) error {
 			return err
 		}
 	}
+
 	return nil
 }
 

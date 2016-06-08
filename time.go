@@ -54,6 +54,7 @@ func (t *Time) ParseDateTimeInLocation(dateStr, timeStr string, location *time.L
 	if dateStr != "" {
 		var datetime time.Time
 		var err error
+
 		if timeStr != "" {
 			datetime, err = time.ParseInLocation(DateLayout+TimeLayout, dateStr+timeStr, location)
 		} else {
@@ -62,6 +63,7 @@ func (t *Time) ParseDateTimeInLocation(dateStr, timeStr string, location *time.L
 		if err != nil {
 			return err
 		}
+
 		t.Set(datetime.Unix())
 		return nil
 	}
