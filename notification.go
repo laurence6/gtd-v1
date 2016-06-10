@@ -124,23 +124,16 @@ func notify(taskList []*gtd.Task) {
 
 func rebuildNotificationIndex() {
 	tpRW.RLock()
+	now := time.Now().Unix()
 	taskList, _ := tp.FindAll(func(task *gtd.Task) bool {
-		if !task.Notification.EqualZero() {
+		if !task.Notification.EqualZero() && task.Notification.Get() > now {
 			return true
 		}
 		return false
 	})
 	tpRW.RUnlock()
 
-	notificationIndex = notificationIndex[:0]
-
-	now := time.Now().Unix()
-	for _, i := range taskList {
-		if i.Notification.Get() < now {
-			continue
-		}
-		notificationIndex = append(notificationIndex, i)
-	}
+	notificationIndex = taskList
 
 	gtd.SortByNotification(notificationIndex)
 }
