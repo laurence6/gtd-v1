@@ -1,6 +1,7 @@
 package gtd
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"strconv"
@@ -20,7 +21,8 @@ func (tp *TaskPool) Marshal(w io.Writer) error {
 }
 
 // Unmarshal reads json objects from Reader and deserializes them to a TaskPool.
-func (tp *TaskPool) Unmarshal(r io.Reader) error {
+func (tp *TaskPool) Unmarshal(b []byte) error {
+	r := bytes.NewReader(b)
 	decoder := json.NewDecoder(r)
 	for {
 		mt := marshalTask{}
