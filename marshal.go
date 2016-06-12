@@ -72,6 +72,7 @@ func (task *Task) marshalJSON(w io.Writer) error {
 		return err
 	}
 	w.Write(b)
+	w.Write([]byte("\n"))
 
 	for _, i := range task.SubTasks {
 		err := i.marshalJSON(w)
