@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
 	"os"
@@ -10,41 +11,55 @@ import (
 	"github.com/laurence6/gtd.go/core"
 )
 
+var conf = map[string]interface{}{}
+
+var redisClient *Client
+
 var tp *gtd.TaskPool
 var tpRW = &sync.RWMutex{}
 
 var defaultIndex = []*gtd.Task{}
 
-var session = map[string]interface{}{}
-
 var wg = &sync.WaitGroup{}
 
 func init() {
-	sessionFile, err := os.Open("session")
+	// Conf
+	confFile, err := os.Open("conf")
 	if err == nil {
-		dec := json.NewDecoder(sessionFile)
-		err = dec.Decode(&session)
+		dec := json.NewDecoder(confFile)
+		err = dec.Decode(&conf)
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatalln(err.Error())
 		}
-		sessionFile.Close()
+		confFile.Close()
 	} else {
-		log.Println(err)
+		log.Fatalln(err.Error())
 	}
-	log.Println(session)
+	log.Println("Conf:", conf)
 
+	// Redis Client
+	redisAddr, ok := conf["redis_addr"]
+	if !ok {
+		log.Fatalln("Cannot get redis server addr 'redis_addr'")
+	}
+	redisClient = NewRedisClient(redisAddr.(string))
+	if !redisClient.IsOnline() {
+		log.Fatalln("Redis server offline")
+	}
+
+	// TaskPool
 	tp = gtd.NewTaskPool()
-	tpFile, err := os.Open("taskpool")
+	serializedTp, err := redisClient.Get("taskpool").Bytes()
 	if err == nil {
-		err = tp.Unmarshal(tpFile)
+		err = tp.Unmarshal(serializedTp)
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatalln(err.Error())
 		}
-		tpFile.Close()
 	} else {
-		log.Println(err)
+		log.Println(err.Error())
 	}
 
+	// Signal
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -64,25 +79,23 @@ func rebuildDefaultIndex() {
 }
 
 func backupTaskPool() {
-	os.Rename("taskpool", "taskpool.bak")
-	tpFile, err := os.OpenFile("taskpool", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	if err != nil {
-		log.Println(err)
-	}
+	buf := &bytes.Buffer{}
 
 	tpRW.RLock()
-	err = tp.Marshal(tpFile)
+	err := tp.Marshal(buf)
 	tpRW.RUnlock()
 	if err != nil {
-		log.Println(err)
+		log.Println(err.Error())
 	}
 
-	tpFile.Close()
+	err = redisClient.Set("taskpool", buf.String(), 0).Err()
+	if err != nil {
+		log.Println(err.Error())
+	}
 }
 
 func main() {
-	// When backup has better performence
-	//tp.HookFunc(backupTaskPool)
+	tp.HookFunc(backupTaskPool)
 
 	rebuildDefaultIndex()
 	tp.HookFunc(rebuildDefaultIndex)
