@@ -54,7 +54,11 @@ func web() {
 	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("static/fonts"))))
 
 	go func() {
-		log.Fatalln(http.ListenAndServe(":8000", nil))
+		addr, ok := conf["web_listen_addr"].(string)
+		if !ok {
+			log.Fatalln("Cannot get web server listen addr 'web_listen_addr'")
+		}
+		log.Fatalln(http.ListenAndServe(addr, nil))
 	}()
 }
 

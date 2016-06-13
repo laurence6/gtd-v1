@@ -11,6 +11,8 @@ import (
 	"github.com/laurence6/gtd.go/core"
 )
 
+const confPath = "conf"
+
 var conf = map[string]interface{}{}
 
 var redisClient *Client
@@ -24,7 +26,7 @@ var wg = &sync.WaitGroup{}
 
 func init() {
 	// Conf
-	confFile, err := os.Open("conf")
+	confFile, err := os.Open(confPath)
 	if err == nil {
 		dec := json.NewDecoder(confFile)
 		err = dec.Decode(&conf)
@@ -38,11 +40,11 @@ func init() {
 	log.Println("Conf:", conf)
 
 	// Redis Client
-	redisAddr, ok := conf["redis_addr"]
+	redisAddr, ok := conf["redis_addr"].(string)
 	if !ok {
 		log.Fatalln("Cannot get redis server addr 'redis_addr'")
 	}
-	redisClient = NewRedisClient(redisAddr.(string))
+	redisClient = NewRedisClient(redisAddr)
 	if !redisClient.IsOnline() {
 		log.Fatalln("Redis server offline")
 	}
