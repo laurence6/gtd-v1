@@ -4,25 +4,28 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"io"
 	"time"
 )
 
-func encPassword(passwd string) string {
-	h := sha256.Sum256([]byte(passwd))
+var ErrPasswordNotFound = errors.New("Cannot find password 'password' in conf")
+
+func encPassword(password string) string {
+	h := sha256.Sum256([]byte(password))
 	return base64.StdEncoding.EncodeToString(h[:])
 }
 
 // CheckPassword returns true if password is valid.
-func CheckPassword(passwd string) (bool, error) {
-	if passwd == "" {
+func CheckPassword(password string) (bool, error) {
+	if password == "" {
 		return false, nil
 	}
-	storedPasswd, err := redisClient.Get("passwd").Result()
-	if err != nil {
-		return false, err
+	storedPassword, ok := conf["password"].(string)
+	if !ok {
+		return false, ErrPasswordNotFound
 	}
-	if encPassword(passwd) == storedPasswd {
+	if encPassword(password) == storedPassword {
 		return true, nil
 	}
 	return false, nil

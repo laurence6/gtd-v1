@@ -131,8 +131,8 @@ func auth(w http.ResponseWriter, r *http.Request) *responseJSON {
 
 	r.ParseForm()
 
-	passwd := r.PostFormValue("Password")
-	ok, err := CheckPassword(passwd)
+	password := r.PostFormValue("Password")
+	ok, err := CheckPassword(password)
 	if err != nil {
 		goto LogJsonErrRet
 	}
