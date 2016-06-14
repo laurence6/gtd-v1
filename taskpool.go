@@ -147,6 +147,11 @@ func (tp *TaskPool) Done(task *Task) error {
 	return nil
 }
 
+// Empty removes all Task in TaskPool.
+func (tp *TaskPool) Empty() {
+	tp.tp = map[int64]*Task{}
+}
+
 // FindFunc is used by Find to find Task.
 type FindFunc func(*Task) bool
 
