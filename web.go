@@ -33,6 +33,7 @@ func init() {
 		"templates/edit.html",
 		"templates/form.html",
 		"templates/index.html",
+		"templates/login.html",
 	)
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -41,13 +42,14 @@ func init() {
 
 func web() {
 	http.HandleFunc("/", landing)
-	http.HandleFunc("/index", jsonHandlerWrapper(index))
-	http.HandleFunc("/add", jsonHandlerWrapper(addTask))
-	http.HandleFunc("/addSub", jsonHandlerWrapper(addSubTask))
-	http.HandleFunc("/edit", jsonHandlerWrapper(editTask))
-	http.HandleFunc("/done", jsonHandlerWrapper(doneTask))
-	http.HandleFunc("/delete", jsonHandlerWrapper(deleteTask))
-	http.HandleFunc("/update", jsonHandlerWrapper(updateTask))
+	http.HandleFunc("/auth", jsonHandlerWrapper(auth, false))
+	http.HandleFunc("/index", jsonHandlerWrapper(index, true))
+	http.HandleFunc("/add", jsonHandlerWrapper(addTask, true))
+	http.HandleFunc("/addSub", jsonHandlerWrapper(addSubTask, true))
+	http.HandleFunc("/edit", jsonHandlerWrapper(editTask, true))
+	http.HandleFunc("/done", jsonHandlerWrapper(doneTask, true))
+	http.HandleFunc("/delete", jsonHandlerWrapper(deleteTask, true))
+	http.HandleFunc("/update", jsonHandlerWrapper(updateTask, true))
 
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
@@ -79,24 +81,83 @@ func newResponseJSON() *responseJSON {
 	return &responseJSON{200, ""}
 }
 
-func jsonHandlerWrapper(f func(r *http.Request) *responseJSON) http.HandlerFunc {
+func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request) *responseJSON, needAuth bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			httpError(w, 405, "POST")
 			return
 		}
 
-		response, err := json.Marshal(f(r))
-		if err != nil {
-			httpError(w, 500, err.Error())
-			return
+		var response *responseJSON
+
+		if needAuth {
+			if cookie, err := r.Cookie("token"); err == nil {
+				if ok, _ := CheckToken(cookie.Value); ok {
+					response = f(w, r)
+					goto WriteResponse
+				}
+			}
+			response = login(w, r)
+		} else {
+			response = f(w, r)
 		}
 
-		w.Write(response)
+	WriteResponse:
+		if response != nil {
+			rJSON, err := json.Marshal(response)
+			if err != nil {
+				httpError(w, 500, err.Error())
+				return
+			}
+			w.Write(rJSON)
+		} else {
+			httpError(w, 500, "")
+		}
 	}
 }
 
-func index(r *http.Request) *responseJSON {
+func login(w http.ResponseWriter, r *http.Request) *responseJSON {
+	response := newResponseJSON()
+	b := &bytes.Buffer{}
+
+	_ = t.ExecuteTemplate(b, "login", "")
+
+	response.Content = b.String()
+	return response
+}
+
+func auth(w http.ResponseWriter, r *http.Request) *responseJSON {
+	response := newResponseJSON()
+
+	r.ParseForm()
+
+	passwd := r.PostFormValue("Password")
+	ok, err := CheckPassword(passwd)
+	if err != nil {
+		goto LogJsonErrRet
+	}
+	if ok {
+		token := NewToken()
+		expires := 60 * 60 * 24 * 30
+		err = SetToken(token, expires)
+		if err != nil {
+			goto LogJsonErrRet
+		}
+		http.SetCookie(w, &http.Cookie{Name: "token", Value: token, MaxAge: expires})
+		jsonRedirect(response, "/index")
+		return response
+	}
+
+	jsonError(response, "UID or Password incorrect")
+	return response
+
+LogJsonErrRet:
+	log.Println(err.Error())
+	jsonError(response, err.Error())
+	return response
+}
+
+func index(w http.ResponseWriter, r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
@@ -110,7 +171,7 @@ func index(r *http.Request) *responseJSON {
 	return response
 }
 
-func addTask(r *http.Request) *responseJSON {
+func addTask(w http.ResponseWriter, r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
@@ -124,7 +185,7 @@ func addTask(r *http.Request) *responseJSON {
 	return response
 }
 
-func addSubTask(r *http.Request) *responseJSON {
+func addSubTask(w http.ResponseWriter, r *http.Request) *responseJSON {
 	response := newResponseJSON()
 
 	r.ParseForm()
@@ -160,7 +221,7 @@ LogJsonErrRet:
 	return response
 }
 
-func editTask(r *http.Request) *responseJSON {
+func editTask(w http.ResponseWriter, r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
@@ -199,7 +260,7 @@ LogJsonErrRet:
 	return response
 }
 
-func doneTask(r *http.Request) *responseJSON {
+func doneTask(w http.ResponseWriter, r *http.Request) *responseJSON {
 	response := newResponseJSON()
 
 	r.ParseForm()
@@ -235,7 +296,7 @@ LogJsonErrRet:
 	return response
 }
 
-func deleteTask(r *http.Request) *responseJSON {
+func deleteTask(w http.ResponseWriter, r *http.Request) *responseJSON {
 	response := newResponseJSON()
 
 	r.ParseForm()
@@ -271,13 +332,13 @@ LogJsonErrRet:
 	return response
 }
 
-func updateTask(r *http.Request) *responseJSON {
+func updateTask(w http.ResponseWriter, r *http.Request) *responseJSON {
 	response := newResponseJSON()
 	var task *gtd.Task
 
 	r.ParseForm()
 
-	id, err := stoI64(r.PostForm.Get("ID"))
+	id, err := stoI64(r.PostFormValue("ID"))
 	if err != nil {
 		goto LogJsonErrRet
 	}
