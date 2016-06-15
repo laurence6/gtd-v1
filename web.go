@@ -58,9 +58,9 @@ func web() {
 	go func() {
 		addr, ok := conf["web_listen_addr"].(string)
 		if !ok {
-			log.Fatalln("Cannot get web server listen addr 'web_listen_addr'")
+			log.Panic("Cannot get web server listen addr 'web_listen_addr'")
 		}
-		log.Fatalln(http.ListenAndServe(addr, nil))
+		log.Panic(http.ListenAndServe(addr, nil))
 	}()
 }
 
