@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/laurence6/gtd.go/core"
@@ -60,10 +59,6 @@ var notified = &notifiedList{
 	map[int64][]int64{},
 	[]int64{},
 	60,
-}
-
-func init() {
-	notifiers = append(notifiers, &stdout{})
 }
 
 func notification() {
@@ -136,11 +131,4 @@ func rebuildNotificationIndex() {
 	notificationIndex = taskList
 
 	gtd.SortByNotification(notificationIndex)
-}
-
-type stdout struct {
-}
-
-func (s *stdout) Notify(task *gtd.Task) {
-	fmt.Println("Notification: ", time.Unix(task.Notification.Get(), 0).Format(time.RFC1123), task.Subject)
 }
