@@ -109,9 +109,9 @@ func SortByDefault(taskList []*Task) {
 
 	for _, i := range taskList {
 		switch {
-		case i.Due.sec-now < 0:
+		case !i.Due.EqualZero() && i.Due.sec-now < 0:
 			fallthrough
-		case i.Due.sec-now < int64(7*24*time.Hour/1e9):
+		case !i.Due.EqualZero() && i.Due.sec-now < int64(7*24*time.Hour/1e9):
 			lists[0] = append(lists[0], i)
 		case i.Priority == 1:
 			lists[1] = append(lists[1], i)
