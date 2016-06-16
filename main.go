@@ -97,10 +97,10 @@ func backupTaskPool() {
 }
 
 func main() {
-	tp.HookFunc(backupTaskPool)
+	tp.OnChange(backupTaskPool)
 
 	rebuildDefaultIndex()
-	tp.HookFunc(rebuildDefaultIndex)
+	tp.OnChange(rebuildDefaultIndex)
 
 	log.Println("Start web server")
 	web()

@@ -65,7 +65,7 @@ func notification() {
 	rebuildNotificationIndex()
 
 	c := make(chan int)
-	tp.HookFunc(func() {
+	tp.OnChange(func() {
 		rebuildNotificationIndex()
 		c <- 1
 	})
