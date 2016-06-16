@@ -27,8 +27,8 @@ func newTask() *Task {
 
 // TaskPool contains many *Task, using Task.ID as key. It is not thread safe.
 type TaskPool struct {
-	tp    map[int64]*Task
-	hooks []func()
+	tp       map[int64]*Task
+	onChange []func()
 }
 
 // NewTaskPool returns a *TaskPool.
@@ -182,15 +182,15 @@ func (tp *TaskPool) FindAll(f FindFunc) ([]*Task, error) {
 	return nil, ErrTaskNotFound
 }
 
-// HookFunc adds hook function.
-func (tp *TaskPool) HookFunc(f func()) {
-	tp.hooks = append(tp.hooks, f)
+// OnChange adds hook function.
+func (tp *TaskPool) OnChange(f func()) {
+	tp.onChange = append(tp.onChange, f)
 }
 
 // Changed is called when TaskPool or Task in it is changed. It calls hook functions one by one in another go routine.
 func (tp *TaskPool) Changed() {
 	go func() {
-		for _, f := range tp.hooks {
+		for _, f := range tp.onChange {
 			f()
 		}
 	}()
