@@ -42,14 +42,16 @@ func init() {
 
 func web() {
 	http.HandleFunc("/", landing)
-	http.HandleFunc("/auth", jsonHandlerWrapper(auth, false))
-	http.HandleFunc("/index", jsonHandlerWrapper(index, true))
-	http.HandleFunc("/add", jsonHandlerWrapper(addTask, true))
-	http.HandleFunc("/addSub", jsonHandlerWrapper(addSubTask, true))
-	http.HandleFunc("/edit", jsonHandlerWrapper(editTask, true))
-	http.HandleFunc("/done", jsonHandlerWrapper(doneTask, true))
-	http.HandleFunc("/delete", jsonHandlerWrapper(deleteTask, true))
-	http.HandleFunc("/update", jsonHandlerWrapper(updateTask, true))
+
+	http.HandleFunc("/auth", jsonHandlerWrapper(index))
+
+	http.HandleFunc("/index", jsonHandlerWrapper(index))
+	http.HandleFunc("/add", jsonHandlerWrapper(addTask))
+	http.HandleFunc("/addSub", jsonHandlerWrapper(addSubTask))
+	http.HandleFunc("/edit", jsonHandlerWrapper(editTask))
+	http.HandleFunc("/done", jsonHandlerWrapper(doneTask))
+	http.HandleFunc("/delete", jsonHandlerWrapper(deleteTask))
+	http.HandleFunc("/update", jsonHandlerWrapper(updateTask))
 
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
@@ -72,16 +74,23 @@ func landing(w http.ResponseWriter, r *http.Request) {
 	t.ExecuteTemplate(w, "default", "")
 }
 
+const (
+	jsonStatusOK            = "OK"
+	jsonStatusAuthenticated = "Authenticated"
+	jsonStatusRedirect      = "Redirect"
+	jsonStatusError         = "Error"
+)
+
 type responseJSON struct {
-	StatusCode int
-	Content    string
+	Status  string
+	Content string
 }
 
 func newResponseJSON() *responseJSON {
-	return &responseJSON{200, ""}
+	return &responseJSON{jsonStatusOK, ""}
 }
 
-func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request) *responseJSON, needAuth bool) http.HandlerFunc {
+func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request) *responseJSON) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			httpError(w, 405, "POST")
@@ -90,30 +99,72 @@ func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request) *responseJSON
 
 		var response *responseJSON
 
-		if needAuth {
-			if cookie, err := r.Cookie("token"); err == nil {
-				if ok, _ := CheckToken(cookie.Value); ok {
-					response = f(w, r)
-					goto WriteResponse
-				}
-			}
-			response = login(w, r)
-		} else {
+		response = auth(w, r)
+		if response == nil {
 			response = f(w, r)
 		}
 
-	WriteResponse:
+		var rJSON []byte
 		if response != nil {
-			rJSON, err := json.Marshal(response)
+			var err error
+			rJSON, err = json.Marshal(response)
 			if err != nil {
-				httpError(w, 500, err.Error())
-				return
+				response = newResponseJSON()
+				jsonError(response, err.Error())
+				rJSON, _ = json.Marshal(response)
 			}
-			w.Write(rJSON)
 		} else {
-			httpError(w, 500, "")
+			response = newResponseJSON()
+			jsonError(response, "Empty response")
+			rJSON, _ = json.Marshal(response)
+		}
+		w.Write(rJSON)
+	}
+}
+
+func auth(w http.ResponseWriter, r *http.Request) *responseJSON {
+	response := newResponseJSON()
+
+	if r.RequestURI == "/auth" {
+		r.ParseForm()
+
+		password := r.PostFormValue("Password")
+		ok, err := CheckPassword(password)
+		if err != nil {
+			log.Println(err.Error())
+			jsonError(response, err.Error())
+			return response
+		}
+		if ok {
+			token := NewToken()
+			expires := 60 * 60 * 24 * 30
+			err = SetToken(token, expires)
+			if err != nil {
+				log.Println(err.Error())
+				jsonError(response, err.Error())
+				return response
+			}
+			http.SetCookie(w, &http.Cookie{Name: "token", Value: token, MaxAge: expires})
+			response.Status = jsonStatusAuthenticated
+			return response
+		}
+
+		jsonError(response, "Password incorrect")
+		return response
+	}
+
+	if cookie, err := r.Cookie("token"); err == nil {
+		if ok, err := CheckToken(cookie.Value); err == nil && ok {
+			return nil
+		} else if err != nil {
+			log.Println(err.Error())
+			jsonError(response, err.Error())
+			return response
 		}
 	}
+
+	response = login(w, r)
+	return response
 }
 
 func login(w http.ResponseWriter, r *http.Request) *responseJSON {
@@ -123,36 +174,6 @@ func login(w http.ResponseWriter, r *http.Request) *responseJSON {
 	_ = t.ExecuteTemplate(b, "login", "")
 
 	response.Content = b.String()
-	return response
-}
-
-func auth(w http.ResponseWriter, r *http.Request) *responseJSON {
-	response := newResponseJSON()
-
-	r.ParseForm()
-
-	password := r.PostFormValue("Password")
-	ok, err := CheckPassword(password)
-	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
-	}
-	if ok {
-		token := NewToken()
-		expires := 60 * 60 * 24 * 30
-		err = SetToken(token, expires)
-		if err != nil {
-			log.Println(err.Error())
-			jsonError(response, err.Error())
-			return response
-		}
-		http.SetCookie(w, &http.Cookie{Name: "token", Value: token, MaxAge: expires})
-		jsonRedirect(response, "/index")
-		return response
-	}
-
-	jsonError(response, "UID or Password incorrect")
 	return response
 }
 
@@ -403,12 +424,12 @@ func httpError(w http.ResponseWriter, code int, message string) {
 }
 
 func jsonRedirect(r *responseJSON, content string) {
-	r.StatusCode = 302
+	r.Status = jsonStatusRedirect
 	r.Content = content
 }
 
 func jsonError(r *responseJSON, content string) {
-	r.StatusCode = 500
+	r.Status = jsonStatusError
 	r.Content = "Oops: " + content
 }
 

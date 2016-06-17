@@ -71,15 +71,18 @@
       dataType: "json",
       cache: false,
       success: function(data) {
-        switch (data.StatusCode) {
-        case 200:
+        switch (data.Status) {
+        case "OK":
           $(".content").html(data.Content);
           break;
-        case 302:
+        case "Authenticated":
+          window.onhashchange();
+          break;
+        case "Redirect":
           location.hash = data.Content;
           break;
-        default:
-          alert(data.StatusCode+": "+data.Content);
+        case "Error":
+          alert(data.Status+": "+data.Content);
           break;
         }
       },
