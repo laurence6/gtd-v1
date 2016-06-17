@@ -6,6 +6,8 @@ import (
 	"gopkg.in/redis.v3"
 )
 
+var ErrRedisNil = redis.Nil
+
 // GetNamespace returns a string from args separated by colons.
 func GetNamespace(args ...string) string {
 	return strings.Join(args, ":")

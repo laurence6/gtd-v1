@@ -37,6 +37,9 @@ func CheckToken(token string) (bool, error) {
 	if err == nil {
 		return true, nil
 	}
+	if err == ErrRedisNil {
+		return false, nil
+	}
 	return false, err
 }
 
