@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 )
 
 var ErrRedisNil = redis.Nil
