@@ -1,112 +1,55 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 
-	"github.com/laurence6/gtd.go/core"
+	"github.com/laurence6/gtd.go/model"
+
+	"gopkg.in/pg.v4"
+	"gopkg.in/redis.v4"
 )
+
+var logger = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 
 const confPath = "conf"
 
-var conf = map[string]interface{}{}
+var conf *Conf
 
-var redisClient *Client
-
-var tp *gtd.TaskPool
-var tpRW = &sync.RWMutex{}
-
-var defaultIndex = []*gtd.Task{}
-
-var wg = &sync.WaitGroup{}
+var redisClient *redis.Client
 
 func init() {
-	// Conf
-	confFile, err := os.Open(confPath)
-	if err == nil {
-		dec := json.NewDecoder(confFile)
-		err = dec.Decode(&conf)
-		if err != nil {
-			log.Fatalln(err.Error())
-		}
-		confFile.Close()
-	} else {
-		log.Fatalln(err.Error())
+	var err error
+
+	conf, err = parseConfFile(confPath)
+	if err != nil {
+		logger.Fatalln(err)
 	}
-	log.Println("Conf:", conf)
 
 	// Redis Client
-	redisAddr, ok := conf["redis_addr"].(string)
-	if !ok {
-		log.Fatalln("Cannot get redis server addr 'redis_addr'")
-	}
-	redisClient = NewRedisClient(redisAddr)
-	if !redisClient.IsOnline() {
-		log.Fatalln("Redis server offline")
-	}
+	redisClient = redis.NewClient(&conf.RedisOptions)
 
-	// TaskPool
-	tp = gtd.NewTaskPool()
-	serializedTp, err := redisClient.Get("taskpool").Bytes()
-	if err == nil {
-		err = tp.Unmarshal(serializedTp)
-		if err != nil {
-			log.Fatalln(err.Error())
-		}
-	} else {
-		log.Println(err.Error())
-	}
+	// PostgreSQL
+	db := pg.Connect(&conf.PgOptions)
+	model.DBConn = db
 
 	// Signal
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		log.Println("Interrupt received, bye")
-		backupTaskPool()
+		logger.Println("Interrupt received, bye")
 		os.Exit(0)
 	}()
 }
 
-func rebuildDefaultIndex() {
-	tpRW.RLock()
-	defaultIndex = tp.GetAll()
-	tpRW.RUnlock()
-
-	gtd.SortByDefault(defaultIndex)
-}
-
-func backupTaskPool() {
-	buf := &bytes.Buffer{}
-
-	tpRW.RLock()
-	err := tp.Marshal(buf)
-	tpRW.RUnlock()
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	err = redisClient.Set("taskpool", buf.String(), 0).Err()
-	if err != nil {
-		log.Println(err.Error())
-	}
-}
-
 func main() {
-	tp.OnChange(backupTaskPool)
-
-	rebuildDefaultIndex()
-	tp.OnChange(rebuildDefaultIndex)
-
-	log.Println("Start web server")
+	logger.Println("Start web server")
 	web()
-	log.Println("Start notification")
-	notification()
 
+	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	wg.Wait()
 }
