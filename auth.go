@@ -45,7 +45,7 @@ func NewToken() string {
 
 // SetToken stores UserID and token in redis using "token:xxx" as key. An expiration in second is taken.
 func SetToken(userID, token string, expires int) error {
-	err := redisClient.Set(getNamespace("tok", token), userID, time.Duration(expires)*1e9).Err()
+	err := redisClient.SetNX(getNamespace("tok", token), userID, time.Duration(expires)*1e9).Err()
 	return err
 }
 
