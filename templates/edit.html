@@ -33,6 +33,8 @@ $(function() {
     $("#Done").attr("href", "#/done?ID={{.ID}}");
     $("#Delete").removeClass("hidden");
     $("#Delete").attr("href", "#/delete?ID={{.ID}}");
+
+    $("input[name='ParentTaskID']").val("{{.ParentTaskID}}");
 });
 </script>
 {{end}}

@@ -3,28 +3,56 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"text/template"
 	"time"
 
-	"github.com/laurence6/gtd.go/core"
+	"github.com/laurence6/gtd.go/model"
 )
 
 const (
-	dateLayout = "2006-01-02"
-	timeLayout = "15:04"
+	dateLayout  = "2006-01-02"
+	timeLayout  = "15:04"
+	tokenExpire = 60 * 60 * 24 * 30 // 30 Days
 )
-
-var errInvalid = errors.New("Invalid!")
 
 var location, _ = time.LoadLocation("Local")
 
 var t *template.Template
+
+// Task columns
+const (
+	taskUserID  = "user_id"
+	taskUserIDL = "task.user_id"
+
+	taskID     = "id"
+	taskIDL    = "task.id"
+	taskStart  = "start"
+	taskStartL = "task.start"
+
+	taskSubject       = "subject"
+	taskSubjectL      = "task.subject"
+	taskDue           = "due"
+	taskDueL          = "task.due"
+	taskPriority      = "priority"
+	taskPriorityL     = "task.priority"
+	taskNotification  = "notification"
+	taskNotificationL = "task.notification"
+	taskNext          = "next"
+	taskNextL         = "task.next"
+	taskNote          = "note"
+	taskNoteL         = "task.note"
+
+	taskTags = "Tags"
+
+	taskParentTaskID  = "parent_task_id"
+	taskParentTaskIDL = "task.parent_task_id"
+	taskParentTask    = "ParentTask"
+	taskSubTasks      = "SubTasks"
+)
 
 func init() {
 	var err error
@@ -32,20 +60,20 @@ func init() {
 		"templates/default.html",
 		"templates/edit.html",
 		"templates/form.html",
-		"templates/index.html",
+		"templates/home.html",
 		"templates/login.html",
 	)
 	if err != nil {
-		log.Fatalln(err.Error())
+		logger.Fatalln(err.Error())
 	}
 }
 
 func web() {
 	http.HandleFunc("/", landing)
 
-	http.HandleFunc("/auth", jsonHandlerWrapper(index))
+	http.HandleFunc("/auth", jsonHandlerWrapper(home))
 
-	http.HandleFunc("/index", jsonHandlerWrapper(index))
+	http.HandleFunc("/home", jsonHandlerWrapper(home))
 	http.HandleFunc("/add", jsonHandlerWrapper(addTask))
 	http.HandleFunc("/addSub", jsonHandlerWrapper(addSubTask))
 	http.HandleFunc("/edit", jsonHandlerWrapper(editTask))
@@ -58,11 +86,7 @@ func web() {
 	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("static/fonts"))))
 
 	go func() {
-		addr, ok := conf["web_listen_addr"].(string)
-		if !ok {
-			log.Panic("Cannot get web server listen addr 'web_listen_addr'")
-		}
-		log.Panic(http.ListenAndServe(addr, nil))
+		logger.Panic(http.ListenAndServe(conf.WebListenAddr, nil))
 	}()
 }
 
@@ -90,7 +114,7 @@ func newResponseJSON() *responseJSON {
 	return &responseJSON{jsonStatusOK, ""}
 }
 
-func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request) *responseJSON) http.HandlerFunc {
+func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request, Flash) *responseJSON) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			httpError(w, 405, "POST")
@@ -99,9 +123,10 @@ func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request) *responseJSON
 
 		var response *responseJSON
 
-		response = auth(w, r)
+		flash := Flash{}
+		response = auth(w, r, flash)
 		if response == nil {
-			response = f(w, r)
+			response = f(w, r, flash)
 		}
 
 		var rJSON []byte
@@ -122,29 +147,31 @@ func jsonHandlerWrapper(f func(http.ResponseWriter, *http.Request) *responseJSON
 	}
 }
 
-func auth(w http.ResponseWriter, r *http.Request) *responseJSON {
+func auth(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
 
 	if r.RequestURI == "/auth" {
 		r.ParseForm()
-
+		userID := r.PostFormValue("UserID")
 		password := r.PostFormValue("Password")
-		ok, err := CheckPassword(password)
+
+		var err error
+		userID, err = CheckPassword(userID, EncPassword(password))
 		if err != nil {
-			log.Println(err.Error())
+			logger.Println(err.Error())
 			jsonError(response, err.Error())
 			return response
 		}
-		if ok {
+
+		if userID != "" {
 			token := NewToken()
-			expires := 60 * 60 * 24 * 30
-			err = SetToken(token, expires)
+			err = SetToken(userID, token, tokenExpire)
 			if err != nil {
-				log.Println(err.Error())
+				logger.Println(err.Error())
 				jsonError(response, err.Error())
 				return response
 			}
-			http.SetCookie(w, &http.Cookie{Name: "token", Value: token, MaxAge: expires})
+			http.SetCookie(w, &http.Cookie{Name: "token", Value: token, MaxAge: tokenExpire})
 			response.Status = jsonStatusAuthenticated
 			return response
 		}
@@ -154,21 +181,16 @@ func auth(w http.ResponseWriter, r *http.Request) *responseJSON {
 	}
 
 	if cookie, err := r.Cookie("token"); err == nil {
-		if ok, err := CheckToken(cookie.Value); err == nil && ok {
+		if userID, err := CheckToken(cookie.Value); err == nil && userID != "" {
+			flash["UserID"] = userID
 			return nil
 		} else if err != nil {
-			log.Println(err.Error())
+			logger.Println(err.Error())
 			jsonError(response, err.Error())
 			return response
 		}
 	}
 
-	response = login(w, r)
-	return response
-}
-
-func login(w http.ResponseWriter, r *http.Request) *responseJSON {
-	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
 	_ = t.ExecuteTemplate(b, "login", "")
@@ -177,13 +199,22 @@ func login(w http.ResponseWriter, r *http.Request) *responseJSON {
 	return response
 }
 
-func index(w http.ResponseWriter, r *http.Request) *responseJSON {
+func home(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
-	err := t.ExecuteTemplate(b, "index", defaultIndex)
+	tasks, err := model.GetTasksByUserID(flash["UserID"], taskIDL, taskSubjectL, taskDueL, taskPriorityL, taskNoteL, taskSubTasks)
 	if err != nil {
-		log.Println(err.Error())
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	SortByDefault(tasks)
+
+	err = t.ExecuteTemplate(b, "home", tasks)
+	if err != nil {
+		logger.Println(err.Error())
 		jsonError(response, err.Error())
 		return response
 	}
@@ -191,220 +222,170 @@ func index(w http.ResponseWriter, r *http.Request) *responseJSON {
 	return response
 }
 
-func addTask(w http.ResponseWriter, r *http.Request) *responseJSON {
+func addTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
-	err := t.ExecuteTemplate(b, "form", "")
-	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
-	}
+	_ = t.ExecuteTemplate(b, "form", "")
+
 	response.Content = b.String()
 	return response
 }
 
-func addSubTask(w http.ResponseWriter, r *http.Request) *responseJSON {
-	response := newResponseJSON()
-
-	r.ParseForm()
-
-	id, err := stoI64(r.Form.Get("ID"))
-	if err != nil {
-		log.Println(err.Error())
-		jsonError(response, err.Error())
-		return response
-	}
-
-	if id != 0 {
-		tpRW.RLock()
-		task := tp.Get(id)
-		tpRW.RUnlock()
-		if task != nil {
-			tpRW.Lock()
-			subTask, err := tp.NewSubTask(task)
-			tpRW.Unlock()
-			tp.Changed()
-			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
-			}
-			jsonRedirect(response, "/edit?ID="+strconv.FormatInt(subTask.ID, 10))
-			return response
-		}
-	}
-
-	jsonRedirect(response, "/add")
-	return response
-}
-
-func editTask(w http.ResponseWriter, r *http.Request) *responseJSON {
+func addSubTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
 	r.ParseForm()
-
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
-		log.Println(err.Error())
+		logger.Println(err.Error())
 		jsonError(response, err.Error())
 		return response
 	}
 
-	if id != 0 {
-		tpRW.RLock()
-		task := tp.Get(id)
-		tpRW.RUnlock()
-		if task != nil {
-			_ = t.ExecuteTemplate(b, "form", "")
-			err = t.ExecuteTemplate(b, "parentsubtask", task)
-			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
-			}
-			err = t.ExecuteTemplate(b, "edit", task)
-			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
-			}
-			response.Content = b.String()
-			return response
-		}
-	}
-
-	jsonRedirect(response, "/add")
-	return response
-}
-
-func doneTask(w http.ResponseWriter, r *http.Request) *responseJSON {
-	response := newResponseJSON()
-
-	r.ParseForm()
-
-	id, err := stoI64(r.Form.Get("ID"))
+	_ = t.ExecuteTemplate(b, "form", "")
+	err = t.ExecuteTemplate(b, "edit", model.Task{ParentTaskID: id})
 	if err != nil {
-		log.Println(err.Error())
+		logger.Println(err.Error())
 		jsonError(response, err.Error())
 		return response
 	}
 
-	if id != 0 {
-		tpRW.RLock()
-		task := tp.Get(id)
-		tpRW.RUnlock()
-		if task != nil {
-			tpRW.Lock()
-			err := tp.Done(task)
-			tpRW.Unlock()
-			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
-			}
-			tp.Changed()
-			jsonRedirect(response, "/index")
-			return response
-		}
-	}
-
-	jsonError(response, errInvalid.Error())
+	response.Content = b.String()
 	return response
 }
 
-func deleteTask(w http.ResponseWriter, r *http.Request) *responseJSON {
+func editTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
+	b := &bytes.Buffer{}
 
 	r.ParseForm()
-
 	id, err := stoI64(r.Form.Get("ID"))
 	if err != nil {
-		log.Println(err.Error())
+		logger.Println(err.Error())
 		jsonError(response, err.Error())
 		return response
 	}
 
-	if id != 0 {
-		tpRW.RLock()
-		task := tp.Get(id)
-		tpRW.RUnlock()
-		if task != nil {
-			tpRW.Lock()
-			err := tp.Delete(task)
-			tpRW.Unlock()
-			if err != nil {
-				log.Println(err.Error())
-				jsonError(response, err.Error())
-				return response
-			}
-			tp.Changed()
-			jsonRedirect(response, "/index")
-			return response
-		}
+	task, err := model.GetTask(flash["UserID"], id, taskIDL, taskSubjectL, taskDueL, taskPriorityL, taskNotificationL, taskNextL, taskNoteL, taskParentTaskIDL, taskParentTask, taskSubTasks)
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
 	}
 
-	jsonError(response, errInvalid.Error())
+	_ = t.ExecuteTemplate(b, "form", "")
+	err = t.ExecuteTemplate(b, "parentsubtask", task)
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+	err = t.ExecuteTemplate(b, "edit", task)
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	response.Content = b.String()
 	return response
 }
 
-func updateTask(w http.ResponseWriter, r *http.Request) *responseJSON {
+func doneTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
-	var task *gtd.Task
 
 	r.ParseForm()
+	id, err := stoI64(r.Form.Get("ID"))
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
 
+	err = model.DoneTask(model.Task{
+		UserID: flash["UserID"],
+		ID:     id,
+	})
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	jsonRedirect(response, "/home")
+	return response
+}
+
+func deleteTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
+	response := newResponseJSON()
+
+	r.ParseForm()
+	id, err := stoI64(r.Form.Get("ID"))
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	err = model.DeleteTask(model.Task{
+		UserID: flash["UserID"],
+		ID:     id,
+	})
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	jsonRedirect(response, "/home")
+	return response
+}
+
+func updateTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
+	response := newResponseJSON()
+
+	r.ParseForm()
 	id, err := stoI64(r.PostFormValue("ID"))
 	if err != nil {
-		log.Println(err.Error())
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	task := model.Task{
+		UserID: flash["UserID"],
+	}
+
+	err = updateTaskFromForm(&task, r.PostForm)
+	if err != nil {
+		logger.Println(err.Error())
 		jsonError(response, err.Error())
 		return response
 	}
 
 	if id == 0 {
-		tpRW.Lock()
-		task, err = tp.NewTask()
-		tpRW.Unlock()
+		task.ID = newID()
+		task.Start = model.NewTime(time.Now().Unix())
+		fmt.Println(task)
+		err = model.CreateTask(task)
 		if err != nil {
-			tp.Delete(task)
-			log.Println(err.Error())
+			logger.Println(err.Error())
 			jsonError(response, err.Error())
 			return response
 		}
-		tpRW.Lock()
-		err = updateTaskFromForm(task, r.PostForm)
-		tpRW.Unlock()
+	} else {
+		task.ID = id
+		err = model.UpdateTask(task, taskSubject, taskDue, taskPriority, taskNotification, taskNext, taskNote)
 		if err != nil {
-			tp.Delete(task)
-			log.Println(err.Error())
+			logger.Println(err.Error())
 			jsonError(response, err.Error())
 			return response
 		}
-		tp.Changed()
-		jsonRedirect(response, "/index")
-		return response
 	}
 
-	tpRW.RLock()
-	task = tp.Get(id)
-	tpRW.RUnlock()
-	if task != nil {
-		tpRW.Lock()
-		err := updateTaskFromForm(task, r.PostForm)
-		tpRW.Unlock()
-		if err != nil {
-			log.Println(err.Error())
-			jsonError(response, err.Error())
-			return response
-		}
-		tp.Changed()
-		jsonRedirect(response, "/index")
-		return response
-	}
-
-	jsonError(response, errInvalid.Error())
+	jsonRedirect(response, "/home")
 	return response
 }
 
@@ -430,22 +411,11 @@ func jsonRedirect(r *responseJSON, content string) {
 
 func jsonError(r *responseJSON, content string) {
 	r.Status = jsonStatusError
-	r.Content = "Oops: " + content
-}
-
-func stoI64(str string) (int64, error) {
-	if str == "" {
-		return 0, nil
-	}
-	i64, err := strconv.ParseInt(str, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return i64, nil
+	r.Content = content
 }
 
 // updateTaskFromForm updates Subject, Due, Priority, Notification, Next, Note fields.
-func updateTaskFromForm(task *gtd.Task, form url.Values) error {
+func updateTaskFromForm(task *model.Task, form url.Values) error {
 	var err error
 	task.Subject = form.Get("Subject")
 
@@ -485,6 +455,11 @@ func updateTaskFromForm(task *gtd.Task, form url.Values) error {
 	}
 
 	task.Note = form.Get("Note")
+
+	task.ParentTaskID, err = stoI64(form.Get("ParentTaskID"))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

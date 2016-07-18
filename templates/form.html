@@ -1,8 +1,14 @@
 {{define "form"}}
 <form class="col-xs-12 col-sm-8">
-  <div class="form-group">
+  <div class="row">
+  <div class="form-group col-xs-12 col-sm-6">
     <label>ID</label>
-    <input type="text" name="ID" class="form-control" readonly>
+    <input type="text" name="ID" class="form-control" value="0" readonly>
+  </div>
+  <div class="form-group col-xs-12 col-sm-6">
+    <label>ParentTaskID</label>
+    <input type="text" name="ParentTaskID" class="form-control" value="0" readonly>
+  </div>
   </div>
 
   <div class="form-group">
@@ -103,9 +109,9 @@
 {{define "parentsubtask"}}
 <div class="col-xs-12 col-sm-4">
   <h3>Parent Task</h3>
-  {{if .ParentTask}}
+  {{if ne .ParentTask.ID 0}}
   <a href="#/edit?ID={{.ParentTask.ID}}">
-    <h4><span class="label {{if eq .Priority 1}}label-danger{{else}}label-default{{end}}">{{.Priority}}</span> {{.ParentTask.Subject}}</h4>
+    <h4><span class="label {{if eq .ParentTask.Priority 1}}label-danger{{else}}label-default{{end}}">{{.ParentTask.Priority}}</span> {{.ParentTask.Subject}}</h4>
     <p class="text-right">{{.ParentTask.Due.Date}} {{.ParentTask.Due.Time}}</p>
   </a>
   {{else}}
