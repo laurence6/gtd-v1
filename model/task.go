@@ -17,7 +17,7 @@ type Task struct {
 	Next         Time
 	Note         string
 
-	Tags []Tag
+	Tags Tags
 
 	ParentTaskID int64 `sql:",null"`
 	ParentTask   *Task
