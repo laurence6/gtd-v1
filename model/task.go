@@ -25,15 +25,17 @@ type Task struct {
 }
 
 func UpdateTags(task Task) error {
-	nTags := len(task.Tags)
-
-	if nTags == 0 {
+	if len(task.Tags) == 0 {
 		_, err := DBConn.Exec("DELETE FROM tag WHERE tag.task_id = ?;", task.ID)
 		return err
 	}
 
-	tagNames := make([]string, nTags)
-	for n := 0; n < nTags; n++ {
+	tagNames := make([]string, len(task.Tags))
+	for n := 0; n < len(task.Tags); n++ {
+		task.Tags[n].UserID = task.UserID
+
+		task.Tags[n].TaskID = task.ID
+
 		tagNames[n] = task.Tags[n].Name
 	}
 
@@ -64,8 +66,14 @@ func CreateTask(task Task) error {
 		return err
 	}
 
-	err = UpdateTags(task)
-	return err
+	if len(task.Tags) > 0 {
+		err = UpdateTags(task)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func GetTask(userID string, taskID int64, columns ...string) (Task, error) {
