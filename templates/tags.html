@@ -1,0 +1,7 @@
+{{define "tags"}}
+<ul class="col-xs-12 col-sm-6">
+  {{range .}}
+  <li><a href="#/tag?Name={{.Name}}">{{.Name}}</a></li>
+  {{end}}
+</ul>
+{{end}}

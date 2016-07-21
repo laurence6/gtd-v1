@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -62,6 +63,7 @@ func init() {
 		"templates/form.html",
 		"templates/home.html",
 		"templates/login.html",
+		"templates/tags.html",
 	)
 	if err != nil {
 		logger.Fatalln(err.Error())
@@ -80,6 +82,9 @@ func web() {
 	http.HandleFunc("/done", jsonHandlerWrapper(doneTask))
 	http.HandleFunc("/delete", jsonHandlerWrapper(deleteTask))
 	http.HandleFunc("/update", jsonHandlerWrapper(updateTask))
+
+	http.HandleFunc("/tags", jsonHandlerWrapper(tags))
+	http.HandleFunc("/tag", jsonHandlerWrapper(tag))
 
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("static/css"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("static/js"))))
@@ -268,7 +273,7 @@ func editTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON
 		return response
 	}
 
-	task, err := model.GetTask(flash["UserID"], id, taskIDL, taskSubjectL, taskDueL, taskPriorityL, taskNotificationL, taskNextL, taskNoteL, taskParentTaskIDL, taskParentTask, taskSubTasks)
+	task, err := model.GetTask(flash["UserID"], id, taskIDL, taskSubjectL, taskDueL, taskPriorityL, taskNotificationL, taskNextL, taskNoteL, taskParentTaskIDL, taskParentTask, taskSubTasks, taskTags)
 	if err != nil {
 		logger.Println(err.Error())
 		jsonError(response, err.Error())
@@ -368,7 +373,6 @@ func updateTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJS
 	if id == 0 {
 		task.ID = newID()
 		task.Start = model.NewTime(time.Now().Unix())
-		fmt.Println(task)
 		err = model.CreateTask(task)
 		if err != nil {
 			logger.Println(err.Error())
@@ -377,7 +381,7 @@ func updateTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJS
 		}
 	} else {
 		task.ID = id
-		err = model.UpdateTask(task, taskSubject, taskDue, taskPriority, taskNotification, taskNext, taskNote)
+		err = model.UpdateTask(task, taskSubject, taskDue, taskPriority, taskNotification, taskNext, taskNote, taskTags)
 		if err != nil {
 			logger.Println(err.Error())
 			jsonError(response, err.Error())
@@ -386,6 +390,43 @@ func updateTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJS
 	}
 
 	jsonRedirect(response, "/home")
+	return response
+}
+
+func tags(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
+	response := newResponseJSON()
+	b := &bytes.Buffer{}
+
+	tags, err := model.GetTagsByUserID(flash["UserID"])
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	_ = t.ExecuteTemplate(b, "tags", tags)
+
+	response.Content = b.String()
+	return response
+}
+
+func tag(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
+	response := newResponseJSON()
+	b := &bytes.Buffer{}
+
+	r.ParseForm()
+	name := r.FormValue("Name")
+
+	tasks, err := model.GetTasksByTag(flash["UserID"], name, taskIDL, taskSubjectL, taskDueL, taskPriorityL, taskNoteL, taskSubTasks)
+	if err != nil {
+		logger.Println(err.Error())
+		jsonError(response, err.Error())
+		return response
+	}
+
+	_ = t.ExecuteTemplate(b, "home", tasks)
+
+	response.Content = b.String()
 	return response
 }
 
@@ -455,6 +496,15 @@ func updateTaskFromForm(task *model.Task, form url.Values) error {
 	}
 
 	task.Note = form.Get("Note")
+
+	tagNames := strings.Split(form.Get("Tags"), ",")
+	tags := make([]model.Tag, len(tagNames))
+	for n := 0; n < len(tagNames); n++ {
+		tags[n] = model.Tag{
+			Name:   tagNames[n],
+		}
+	}
+	task.Tags = tags
 
 	task.ParentTaskID, err = stoI64(form.Get("ParentTaskID"))
 	if err != nil {
