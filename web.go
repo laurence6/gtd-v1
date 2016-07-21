@@ -497,14 +497,18 @@ func updateTaskFromForm(task *model.Task, form url.Values) error {
 
 	task.Note = form.Get("Note")
 
-	tagNames := strings.Split(form.Get("Tags"), ",")
-	tags := make([]model.Tag, len(tagNames))
-	for n := 0; n < len(tagNames); n++ {
-		tags[n] = model.Tag{
-			Name:   tagNames[n],
+	if tagsStr := strings.Trim(form.Get("Tags"), ","); tagsStr != "" {
+		tagNames := strings.Split(tagsStr, ",")
+		tags := make([]model.Tag, len(tagNames))
+		for n := 0; n < len(tagNames); n++ {
+			tags[n] = model.Tag{
+				Name: tagNames[n],
+			}
 		}
+		task.Tags = tags
+	} else {
+		task.Tags = []model.Tag{}
 	}
-	task.Tags = tags
 
 	task.ParentTaskID, err = stoI64(form.Get("ParentTaskID"))
 	if err != nil {
