@@ -24,10 +24,14 @@ type Task struct {
 	SubTasks     []Task `pg:",fk:ParentTask"`
 }
 
-func UpdateTags(task Task) error {
+func updateTags(tx *pg.Tx, task Task) error {
 	if len(task.Tags) == 0 {
-		_, err := DBConn.Exec("DELETE FROM tag WHERE tag.task_id = ?;", task.ID)
-		return err
+		_, err := tx.Exec("DELETE FROM tag WHERE tag.task_id = ?;", task.ID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		return nil
 	}
 
 	tagNames := make([]string, len(task.Tags))
@@ -39,12 +43,7 @@ func UpdateTags(task Task) error {
 		tagNames[n] = task.Tags[n].Name
 	}
 
-	tx, err := DBConn.Begin()
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec("DELETE FROM tag WHERE tag.task_id = ? AND tag.name NOT IN (?);", task.ID, pg.In(tagNames))
+	_, err := tx.Exec("DELETE FROM tag WHERE tag.task_id = ? AND tag.name NOT IN (?);", task.ID, pg.In(tagNames))
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -56,24 +55,30 @@ func UpdateTags(task Task) error {
 		return err
 	}
 
-	err = tx.Commit()
-	return err
+	return nil
 }
 
 func CreateTask(task Task) error {
-	err := DBConn.Create(&task)
+	tx, err := DBConn.Begin()
 	if err != nil {
 		return err
 	}
 
+	err = tx.Create(&task)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	if len(task.Tags) > 0 {
-		err = UpdateTags(task)
+		err = updateTags(tx, task)
 		if err != nil {
 			return err
 		}
 	}
 
-	return nil
+	err = tx.Commit()
+	return err
 }
 
 func GetTask(userID string, taskID int64, columns ...string) (Task, error) {
@@ -125,21 +130,32 @@ func GetTasksByTag(userID, tagName string, columns ...string) ([]Task, error) {
 }
 
 func UpdateTask(task Task, columns ...string) error {
-	_, err := DBConn.Model(&task).
+	tx, err := DBConn.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Model(&task).
 		Column(columns...).
 		Where("task.id = ?", task.ID).
 		Where("task.user_id = ?", task.UserID).
 		Update()
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	for _, column := range columns {
 		if column == "Tags" {
-			err = UpdateTags(task)
+			err = updateTags(tx, task)
+			if err != nil {
+				return err
+			}
 			break
 		}
 	}
+
+	err = tx.Commit()
 	return err
 }
 
