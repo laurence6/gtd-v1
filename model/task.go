@@ -1,6 +1,9 @@
 package model
 
-import "gopkg.in/pg.v4"
+import (
+	"gopkg.in/pg.v4"
+	"gopkg.in/pg.v4/orm"
+)
 
 type Task struct {
 	TableName struct{} `sql:"task"`
@@ -121,6 +124,21 @@ func GetTasksByTag(userID, tagName string, columns ...string) ([]Task, error) {
 		Join("JOIN tag ON task.id = tag.task_id").
 		Where("task.user_id = ?", userID).
 		Where("tag.name = ?", tagName).
+		Select()
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func GetTasksByFunc(userID string, f func(q *orm.Query) *orm.Query, columns ...string) ([]Task, error) {
+	tasks := []Task{}
+
+	err := DBConn.Model(&tasks).
+		Column(columns...).
+		Where("task.user_id = ?", userID).
+		Apply(f).
 		Select()
 	if err != nil {
 		return nil, err
