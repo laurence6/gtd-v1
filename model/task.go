@@ -10,9 +10,7 @@ type Task struct {
 
 	UserID string
 
-	ID    int64 `sql:",pk"`
-	Start Time
-
+	ID           int64 `sql:",pk"`
 	Subject      string
 	Due          Time
 	Priority     int
@@ -198,15 +196,17 @@ func DoneTask(task Task) error {
 		return DeleteTask(task)
 	}
 
-	delta := task.Next.Get()/86400*86400 - task.Start.Get()/86400*86400
-	task.Start.Set(task.Next.Get())
-	if !task.Due.EqualZero() {
-		task.Due.Set(task.Due.Get() + delta)
+	if task.Due.EqualZero() {
+		return nil
 	}
+
+	delta := task.Next.Get()/86400*86400 - task.Due.Get()/86400*86400
+
+	task.Due.Set(task.Next.Get())
 	if !task.Notification.EqualZero() {
 		task.Notification.Set(task.Notification.Get() + delta)
 	}
 	task.Next.Set(task.Next.Get() + delta)
 
-	return UpdateTask(task, "start", "due", "notification", "next")
+	return UpdateTask(task, "due", "notification", "next")
 }

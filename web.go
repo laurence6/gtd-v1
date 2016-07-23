@@ -29,11 +29,8 @@ const (
 	taskUserID  = "user_id"
 	taskUserIDL = "task.user_id"
 
-	taskID     = "id"
-	taskIDL    = "task.id"
-	taskStart  = "start"
-	taskStartL = "task.start"
-
+	taskID            = "id"
+	taskIDL           = "task.id"
 	taskSubject       = "subject"
 	taskSubjectL      = "task.subject"
 	taskDue           = "due"
@@ -372,7 +369,6 @@ func updateTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJS
 
 	if id == 0 {
 		task.ID = newID()
-		task.Start = model.NewTime(time.Now().Unix())
 		err = model.CreateTask(task)
 		if err != nil {
 			logger.Println(err.Error())
