@@ -29,7 +29,6 @@ func updateTags(tx *pg.Tx, task Task) error {
 	if len(task.Tags) == 0 {
 		_, err := tx.Exec("DELETE FROM tag WHERE tag.task_id = ?;", task.ID)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 		return nil
@@ -46,13 +45,11 @@ func updateTags(tx *pg.Tx, task Task) error {
 
 	_, err := tx.Exec("DELETE FROM tag WHERE tag.task_id = ? AND tag.name NOT IN (?);", task.ID, pg.In(tagNames))
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	_, err = tx.Model(&task.Tags).OnConflict("DO NOTHING").Create()
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -74,6 +71,7 @@ func CreateTask(task Task) error {
 	if len(task.Tags) > 0 {
 		err = updateTags(tx, task)
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
@@ -165,6 +163,7 @@ func UpdateTask(task Task, columns ...string) error {
 		if column == "Tags" {
 			err = updateTags(tx, task)
 			if err != nil {
+				tx.Rollback()
 				return err
 			}
 			break
