@@ -58,7 +58,7 @@ func init() {
 		"templates/default.html",
 		"templates/edit.html",
 		"templates/form.html",
-		"templates/home.html",
+		"templates/task_list.html",
 		"templates/login.html",
 		"templates/tags.html",
 	)
@@ -214,7 +214,7 @@ func home(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 
 	SortByDefault(tasks)
 
-	err = t.ExecuteTemplate(b, "home", tasks)
+	err = t.ExecuteTemplate(b, "task_list", tasks)
 	if err != nil {
 		logger.Println(err.Error())
 		jsonError(response, err.Error())
@@ -420,7 +420,7 @@ func tag(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 		return response
 	}
 
-	_ = t.ExecuteTemplate(b, "home", tasks)
+	_ = t.ExecuteTemplate(b, "task_list", tasks)
 
 	response.Content = b.String()
 	return response

@@ -1,5 +1,4 @@
-{{define "home"}}
-{{if .}}
+{{define "task_list"}}
 <ul class="col-xs-12 col-sm-6 task-list">
   {{range .}}
   <li class="{{if eq .Priority 1}}danger{{else}}default{{end}}">
@@ -50,7 +49,4 @@
     $(this).siblings(".task-body").slideToggle();
   });
 </script>
-{{else}}
-<h3>Nothing to do. :)</h3>
-{{end}}
 {{end}}
