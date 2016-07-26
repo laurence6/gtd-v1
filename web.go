@@ -73,8 +73,8 @@ func web() {
 	http.HandleFunc("/auth", jsonHandlerWrapper(home))
 
 	http.HandleFunc("/home", jsonHandlerWrapper(home))
-	http.HandleFunc("/add", jsonHandlerWrapper(addTask))
-	http.HandleFunc("/addSub", jsonHandlerWrapper(addSubTask))
+	http.HandleFunc("/new", jsonHandlerWrapper(newTask))
+	http.HandleFunc("/newSub", jsonHandlerWrapper(newSubTask))
 	http.HandleFunc("/edit", jsonHandlerWrapper(editTask))
 	http.HandleFunc("/done", jsonHandlerWrapper(doneTask))
 	http.HandleFunc("/delete", jsonHandlerWrapper(deleteTask))
@@ -224,7 +224,7 @@ func home(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	return response
 }
 
-func addTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
+func newTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
@@ -234,7 +234,7 @@ func addTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON 
 	return response
 }
 
-func addSubTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
+func newSubTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON {
 	response := newResponseJSON()
 	b := &bytes.Buffer{}
 
