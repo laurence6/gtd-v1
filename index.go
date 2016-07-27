@@ -34,16 +34,16 @@ func (bd byDue) Less(i, j int) bool {
 	}
 }
 
-type byNotification struct {
+type byReminder struct {
 	index
 }
 
-func (bn byNotification) Less(i, j int) bool {
+func (bn byReminder) Less(i, j int) bool {
 	a := bn.index[i]
 	b := bn.index[j]
 	switch {
-	case a.Notification.Get() != b.Notification.Get():
-		return earlier(a.Notification, b.Notification)
+	case a.Reminder.Get() != b.Reminder.Get():
+		return earlier(a.Reminder, b.Reminder)
 	case a.Due.Get() != b.Due.Get():
 		return earlier(a.Due, b.Due)
 	case a.Priority != b.Priority:
@@ -76,9 +76,9 @@ func SortByDue(taskList []model.Task) {
 	sort.Sort(bd)
 }
 
-// SortByNotification sorts []*Task by Notification.
-func SortByNotification(taskList []model.Task) {
-	bn := byNotification{taskList}
+// SortByReminder sorts []*Task by Reminder.
+func SortByReminder(taskList []model.Task) {
+	bn := byReminder{taskList}
 	sort.Sort(bn)
 }
 

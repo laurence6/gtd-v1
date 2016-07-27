@@ -14,11 +14,11 @@ $(function() {
 
     $("input[name='Priority'][value='{{.Priority}}']").parent().button('toggle');
 
-    {{if .Notification.EqualZero}}
-    $("input[name='NoNotification']").prop("checked", true);
+    {{if .Reminder.EqualZero}}
+    $("input[name='NoReminder']").prop("checked", true);
     {{else}}
-    $("input[name='NotificationDate']").val("{{.Notification.Date}}");
-    $("input[name='NotificationTime']").val("{{.Notification.Time}}");
+    $("input[name='ReminderDate']").val("{{.Reminder.Date}}");
+    $("input[name='ReminderTime']").val("{{.Reminder.Time}}");
     {{end}}
 
     {{if not .Next.EqualZero}}

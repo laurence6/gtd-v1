@@ -10,13 +10,13 @@ type Task struct {
 
 	UserID string
 
-	ID           int64 `sql:",pk"`
-	Subject      string
-	Due          Time
-	Priority     int
-	Notification Time
-	Next         Time
-	Note         string
+	ID       int64 `sql:",pk"`
+	Subject  string
+	Due      Time
+	Priority int
+	Reminder Time
+	Next     Time
+	Note     string
 
 	Tags Tags
 
@@ -202,10 +202,10 @@ func DoneTask(task Task) error {
 	delta := task.Next.Get()/86400*86400 - task.Due.Get()/86400*86400
 
 	task.Due.Set(task.Next.Get())
-	if !task.Notification.EqualZero() {
-		task.Notification.Set(task.Notification.Get() + delta)
+	if !task.Reminder.EqualZero() {
+		task.Reminder.Set(task.Reminder.Get() + delta)
 	}
 	task.Next.Set(task.Next.Get() + delta)
 
-	return UpdateTask(task, "due", "notification", "next")
+	return UpdateTask(task, "due", "reminder", "next")
 }

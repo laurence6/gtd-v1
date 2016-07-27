@@ -29,20 +29,20 @@ const (
 	taskUserID  = "user_id"
 	taskUserIDL = "task.user_id"
 
-	taskID            = "id"
-	taskIDL           = "task.id"
-	taskSubject       = "subject"
-	taskSubjectL      = "task.subject"
-	taskDue           = "due"
-	taskDueL          = "task.due"
-	taskPriority      = "priority"
-	taskPriorityL     = "task.priority"
-	taskNotification  = "notification"
-	taskNotificationL = "task.notification"
-	taskNext          = "next"
-	taskNextL         = "task.next"
-	taskNote          = "note"
-	taskNoteL         = "task.note"
+	taskID        = "id"
+	taskIDL       = "task.id"
+	taskSubject   = "subject"
+	taskSubjectL  = "task.subject"
+	taskDue       = "due"
+	taskDueL      = "task.due"
+	taskPriority  = "priority"
+	taskPriorityL = "task.priority"
+	taskReminder  = "reminder"
+	taskReminderL = "task.reminder"
+	taskNext      = "next"
+	taskNextL     = "task.next"
+	taskNote      = "note"
+	taskNoteL     = "task.note"
 
 	taskTags = "Tags"
 
@@ -270,7 +270,7 @@ func editTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJSON
 		return response
 	}
 
-	task, err := model.GetTask(flash["UserID"], id, taskIDL, taskSubjectL, taskDueL, taskPriorityL, taskNotificationL, taskNextL, taskNoteL, taskParentTaskIDL, taskParentTask, taskSubTasks, taskTags)
+	task, err := model.GetTask(flash["UserID"], id, taskIDL, taskSubjectL, taskDueL, taskPriorityL, taskReminderL, taskNextL, taskNoteL, taskParentTaskIDL, taskParentTask, taskSubTasks, taskTags)
 	if err != nil {
 		logger.Println(err.Error())
 		jsonError(response, err.Error())
@@ -377,7 +377,7 @@ func updateTask(w http.ResponseWriter, r *http.Request, flash Flash) *responseJS
 		}
 	} else {
 		task.ID = id
-		err = model.UpdateTask(task, taskSubject, taskDue, taskPriority, taskNotification, taskNext, taskNote, taskTags)
+		err = model.UpdateTask(task, taskSubject, taskDue, taskPriority, taskReminder, taskNext, taskNote, taskTags)
 		if err != nil {
 			logger.Println(err.Error())
 			jsonError(response, err.Error())
@@ -451,7 +451,7 @@ func jsonError(r *responseJSON, content string) {
 	r.Content = content
 }
 
-// updateTaskFromForm updates Subject, Due, Priority, Notification, Next, Note fields.
+// updateTaskFromForm updates Subject, Due, Priority, Reminder, Next, Note fields.
 func updateTaskFromForm(task *model.Task, form url.Values) error {
 	var err error
 	task.Subject = form.Get("Subject")
@@ -471,11 +471,11 @@ func updateTaskFromForm(task *model.Task, form url.Values) error {
 		return err
 	}
 
-	noNotification := form.Get("NoNotification")
-	if noNotification == "on" {
-		task.Notification.Set(0)
+	noReminder := form.Get("NoReminder")
+	if noReminder == "on" {
+		task.Reminder.Set(0)
 	} else {
-		err := task.Notification.ParseDateTimeInLocation(form.Get("NotificationDate"), form.Get("NotificationTime"), location)
+		err := task.Reminder.ParseDateTimeInLocation(form.Get("ReminderDate"), form.Get("ReminderTime"), location)
 		if err != nil {
 			return err
 		}
