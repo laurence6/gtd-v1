@@ -67,12 +67,14 @@
         switch (data.Status) {
         case "OK":
           $(".content").html(data.Content);
+          location.hash = uri;
+          changeAnchorOnclickEvent(".content a");
           break;
         case "Authenticated":
-          window.onhashchange();
+          update(location.hash.substring(1)||"/home");
           break;
         case "Redirect":
-          location.hash = data.Content;
+          update(data.Content);
           break;
         case "Error":
           alert(data.Status+": "+data.Content);
@@ -85,12 +87,18 @@
     });
   }
 
-  window.onhashchange = function() {
-    uri = location.hash.substring(1) || "/home";
-    update(uri);
-  };
+  function changeAnchorOnclickEvent(s) {
+    s = (s||"a")+"[href^='#']";
+    $(s).click(function(event) {
+      event.preventDefault();
+      update($(this).attr("href").substring(1));
+    });
+  }
 
-  $(window.onhashchange());
+  $(function() {
+    changeAnchorOnclickEvent();
+    update(location.hash.substring(1)||"/home");
+  });
 </script>
 </body>
 </html>
