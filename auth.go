@@ -19,7 +19,7 @@ func EncPassword(password string) string {
 }
 
 // CheckPassword returns UserID if UserID and password are valid.
-func CheckPassword(userID, password string) (string, error) {
+func CheckPassword(userID string, password string) (string, error) {
 	if userID == "" || password == "" {
 		return "", errors.New("Empty UserID or Password")
 	}
@@ -44,7 +44,7 @@ func NewToken() string {
 }
 
 // SetToken stores UserID and token in redis using "token:xxx" as key. An expiration in second is taken.
-func SetToken(userID, token string, expires int) error {
+func SetToken(userID string, token string, expires int) error {
 	err := redisClient.SetNX(getNamespace("tok", token), userID, time.Duration(expires)*1e9).Err()
 	return err
 }

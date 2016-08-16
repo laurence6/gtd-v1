@@ -5,7 +5,7 @@ type User struct {
 	Password string
 }
 
-func CreateUser(userID, password string) error {
+func CreateUser(userID string, password string) error {
 	user := User{
 		ID:       userID,
 		Password: password,
@@ -44,7 +44,7 @@ func ChangeUserID(oldUserID, newUserID string) error {
 	return err
 }
 
-func ChangePassword(userID, password string) error {
+func ChangePassword(userID string, password string) error {
 	user := User{
 		ID:       userID,
 		Password: password,

@@ -112,7 +112,7 @@ func GetTasksByUserID(userID string, columns ...string) ([]Task, error) {
 	return tasks, nil
 }
 
-func GetTasksByTag(userID, tagName string, columns ...string) ([]Task, error) {
+func GetTasksByTag(userID string, tagName string, columns ...string) ([]Task, error) {
 	tasks := []Task{}
 
 	err := DBConn.Model(&tasks).

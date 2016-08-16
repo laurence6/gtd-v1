@@ -58,7 +58,7 @@ func (t Time) EqualZero() bool {
 }
 
 // ParseDateTimeInLocation parses date & time string and sets Time.sec. If date is empty, Time.sec = 0. If date is not empty and time is empty, only date will be parsed.
-func (t *Time) ParseDateTimeInLocation(dateStr, timeStr string, location *time.Location) error {
+func (t *Time) ParseDateTimeInLocation(dateStr string, timeStr string, location *time.Location) error {
 	if dateStr != "" {
 		var datetime time.Time
 		var err error
