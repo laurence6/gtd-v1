@@ -57,16 +57,16 @@ func (t Time) EqualZero() bool {
 	return t.sec == 0
 }
 
-// ParseDateTimeInLocation parses date & time string and sets Time.sec. If date is empty, Time.sec = 0. If date is not empty and time is empty, only date will be parsed.
-func (t *Time) ParseDateTimeInLocation(dateStr string, timeStr string, location *time.Location) error {
+// ParseDateTime parses date & time string and sets Time.sec. If date is empty, Time.sec = 0. If date is not empty and time is empty, only date will be parsed.
+func (t *Time) ParseDateTime(dateStr string, timeStr string) error {
 	if dateStr != "" {
 		var datetime time.Time
 		var err error
 
 		if timeStr != "" {
-			datetime, err = time.ParseInLocation(DateLayout+TimeLayout, dateStr+timeStr, location)
+			datetime, err = time.Parse(DateLayout+TimeLayout, dateStr+timeStr)
 		} else {
-			datetime, err = time.ParseInLocation(DateLayout, dateStr, location)
+			datetime, err = time.Parse(DateLayout, dateStr)
 		}
 		if err != nil {
 			return err
@@ -103,4 +103,9 @@ func (t Time) Value() (driver.Value, error) {
 // String converts Time to string.
 func (t Time) String() string {
 	return strconv.FormatInt(t.sec, 10)
+}
+
+// MarshalJSON implements json.Marshaler interface.
+func (t Time) MarshalJSON() ([]byte, error) {
+	return []byte(t.String()), nil
 }

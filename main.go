@@ -46,6 +46,8 @@ func init() {
 }
 
 func main() {
+	logger.Println("PID:", os.Getpid())
+
 	logger.Println("Start web server")
 	web()
 

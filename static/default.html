@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>GTD</title>
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/css/AdminLTE.min.css">
+  <link rel="stylesheet" href="/css/skins/skin-blue.min.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <script src="/js/jquery.min.js"></script>
+  <script src="/js/jquery.slimscroll.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <script src="/js/AdminLTEOptions.js"></script>
+  <script src="/js/app.min.js"></script>
+  <script src="/js/react.js"></script>
+  <script src="/js/react-dom.js"></script>
+</head>
+
+<body class="hold-transition skin-blue fixed sidebar-mini">
+  <div class="wrapper">
+
+    <header class="main-header">
+      <a href="#/home" class="logo">
+        <span class="logo-mini">GTD</span>
+        <span class="logo-lg">GTD</span>
+      </a>
+      <nav class="navbar navbar-static-top" role="navigation">
+        <a href="javascript:void(0)" class="sidebar-toggle" data-toggle="offcanvas" role="button"></a>
+        <div class="navbar-custom-menu pull-left">
+          <ul class="nav navbar-nav">
+            <li><a href="#/new">New</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <aside class="main-sidebar">
+      <section class="sidebar">
+        <ul class="sidebar-menu">
+          <li><a href="#/home"><span>All</span></a></li>
+          <li><a href="#/tags"><span>Tags</span></a></li>
+      </section>
+    </aside>
+
+    <div class="content-wrapper">
+      <section id="content" class="content row">
+      </section>
+    </div>
+
+    <footer class="main-footer">
+    </footer>
+
+  </div>
+
+  <!-- Compile gtd.js to use in production env -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.min.js"></script>
+  <script>
+    function ajax(uri, data, success, error) {
+      data["token"] = window.localStorage.getItem("token");
+
+      $.ajax({
+        url: uri,
+        method: "POST",
+        cache: false,
+        dataType: "json",
+        data: data,
+        success: success,
+        error: error,
+      });
+    }
+  </script>
+  <script type="text/babel" src="/js/gtd.js"></script>
+</body>
+</html>

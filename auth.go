@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"io"
 	"time"
 
@@ -21,7 +20,7 @@ func EncPassword(password string) string {
 // CheckPassword returns UserID if UserID and password are valid.
 func CheckPassword(userID string, password string) (string, error) {
 	if userID == "" || password == "" {
-		return "", errors.New("Empty UserID or Password")
+		return "", nil
 	}
 
 	user, err := model.GetUser(userID)
@@ -51,6 +50,10 @@ func SetToken(userID string, token string, expires int) error {
 
 // CheckToken returns UserID if token is valid.
 func CheckToken(token string) (string, error) {
+	if token == "" {
+		return "", nil
+	}
+
 	userID, err := redisClient.Get(getNamespace("tok", token)).Result()
 	if err == nil {
 		return userID, nil

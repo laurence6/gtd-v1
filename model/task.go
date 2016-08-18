@@ -51,28 +51,28 @@ var (
 )
 
 type taskNormalColumns struct {
-	TableName struct{} `sql:"task"`
+	TableName struct{} `sql:"task" json:"-"`
 
-	UserID string
+	UserID string `json:"-"`
 
-	ID           int64 `sql:",pk"`
+	ID           int64 `sql:",pk" json:",string"` // ID is marshaled into string because javascript only has float number
 	Subject      string
 	Due          Time
 	Priority     int
 	Reminder     Time
 	Next         Time
 	Note         string
-	ParentTaskID int64 `sql:",null"`
+	ParentTaskID int64 `sql:",null" json:",string"`
 }
 
 type Task struct {
-	TableName struct{} `sql:"task"`
+	TableName struct{} `sql:"task" json:"-"`
 
 	taskNormalColumns
 
 	Tags []string `pg:",array"`
 
-	SubTaskIDs []int64 `sql:"sub_task_ids" pg:",array"`
+	SubTaskIDs []int64 `sql:"sub_task_ids" pg:",array" json:",string"`
 }
 
 func genNormalColumnList(fullName bool, columns int) []string {
@@ -194,8 +194,8 @@ func GetTask(userID string, taskID int64, columns int) (Task, error) {
 	return task, nil
 }
 
-func GetTasksByID(userID string, ids []int64, columns int) ([]Task, error) {
-	tasks := []Task{}
+func GetTasksByID(userID string, ids []int64, columns int) (Tasks, error) {
+	tasks := Tasks{}
 
 	q := DBConn.Model(&tasks).Column("task.*")
 
@@ -216,8 +216,8 @@ func GetTasksByID(userID string, ids []int64, columns int) ([]Task, error) {
 	return tasks, nil
 }
 
-func GetTasksByUserID(userID string, columns int) ([]Task, error) {
-	tasks := []Task{}
+func GetTasksByUserID(userID string, columns int) (Tasks, error) {
+	tasks := Tasks{}
 
 	q := DBConn.Model(&tasks).Column("task.*")
 
@@ -238,8 +238,8 @@ func GetTasksByUserID(userID string, columns int) ([]Task, error) {
 	return tasks, nil
 }
 
-func GetTasksByTag(userID string, tagName string, columns int) ([]Task, error) {
-	tasks := []Task{}
+func GetTasksByTag(userID string, tagName string, columns int) (Tasks, error) {
+	tasks := Tasks{}
 
 	q := DBConn.Model(&tasks).Column("task.*")
 
@@ -261,8 +261,8 @@ func GetTasksByTag(userID string, tagName string, columns int) ([]Task, error) {
 	return tasks, nil
 }
 
-func GetTasksByFunc(userID string, f func(q *orm.Query) *orm.Query, columns int) ([]Task, error) {
-	tasks := []Task{}
+func GetTasksByFunc(userID string, f func(q *orm.Query) *orm.Query, columns int) (Tasks, error) {
+	tasks := Tasks{}
 
 	q := DBConn.Model(&tasks).Column("task.*")
 
