@@ -15,8 +15,8 @@
   <script src="/js/bootstrap.min.js"></script>
   <script src="/js/AdminLTEOptions.js"></script>
   <script src="/js/app.min.js"></script>
-  <script src="/js/react.js"></script>
-  <script src="/js/react-dom.js"></script>
+  <script src="/js/react.min.js"></script>
+  <script src="/js/react-dom.min.js"></script>
 </head>
 
 <body class="hold-transition skin-blue fixed sidebar-mini">
@@ -55,8 +55,6 @@
 
   </div>
 
-  <!-- Compile gtd.js to use in production env -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.min.js"></script>
   <script>
     function ajax(uri, data, success, error) {
       data["token"] = window.localStorage.getItem("token");
@@ -72,6 +70,6 @@
       });
     }
   </script>
-  <script type="text/babel" src="/js/gtd.js"></script>
+  <script src="/js/gtd.js"></script>
 </body>
 </html>
