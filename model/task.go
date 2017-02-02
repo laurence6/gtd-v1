@@ -1,9 +1,6 @@
 package model
 
-import (
-	"gopkg.in/pg.v4"
-	"gopkg.in/pg.v4/orm"
-)
+import "gopkg.in/pg.v4/orm"
 
 // Column flag
 const (
@@ -85,31 +82,31 @@ func genNormalColumnList(fullName bool, columns int) []string {
 
 	c := make([]string, 0, len(columnNames)) // TODO: pop count
 
-	if columns&CTaskUserID != 0 {
+	if flagMatch(columns, CTaskUserID) {
 		c = append(c, columnNames["UserID"])
 	}
-	if columns&CTaskID != 0 {
+	if flagMatch(columns, CTaskID) {
 		c = append(c, columnNames["ID"])
 	}
-	if columns&CTaskSubject != 0 {
+	if flagMatch(columns, CTaskSubject) {
 		c = append(c, columnNames["Subject"])
 	}
-	if columns&CTaskDue != 0 {
+	if flagMatch(columns, CTaskDue) {
 		c = append(c, columnNames["Due"])
 	}
-	if columns&CTaskPriority != 0 {
+	if flagMatch(columns, CTaskPriority) {
 		c = append(c, columnNames["Priority"])
 	}
-	if columns&CTaskReminder != 0 {
+	if flagMatch(columns, CTaskReminder) {
 		c = append(c, columnNames["Reminder"])
 	}
-	if columns&CTaskNext != 0 {
+	if flagMatch(columns, CTaskNext) {
 		c = append(c, columnNames["Next"])
 	}
-	if columns&CTaskNote != 0 {
+	if flagMatch(columns, CTaskNote) {
 		c = append(c, columnNames["Note"])
 	}
-	if columns&CTaskParentTaskID != 0 {
+	if flagMatch(columns, CTaskParentTaskID) {
 		c = append(c, columnNames["ParentTaskID"])
 	}
 
@@ -343,4 +340,9 @@ func DoneTask(task Task) error {
 	task.Next.Set(task.Next.Get() + delta)
 
 	return UpdateTask(task, CTaskDue|CTaskReminder|CTaskNext)
+}
+
+// flagMatch returns true if v matches all bits in f.
+func flagMatch(v int, f int) bool {
+	return (v & f) == v
 }
