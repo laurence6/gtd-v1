@@ -1,3 +1,9 @@
+# DEPRECATED
+
+This project is no longer maintained.
+
+This is my first attempt to implement a todo list manager. I think it should have support for the task due time, reminder, priority, tags, and subtask. I wrote a single page web application using React (this was also my first time using React). It still needs a lot of improvement. I created a new project at [laurence/gtd-v2](https://github.com/laurence6/gtd-v2) which uses a table to display tasks based on the importance and urgency of each task. It is also a single page web application but it has the capability of working offline brought by the Service Worker of Javascript.
+
 # gtd.go
 
 A task management system written in Go.
